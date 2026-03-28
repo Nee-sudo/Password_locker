@@ -173,8 +173,13 @@
       const [passwords, setPasswords] = useState([]);
       const [newPassword, setNewPassword] = useState('');
       const [unlockStart, setUnlockStart] = useState('20:00');
-      const [unlockEnd, setUnlockEnd] = useState('21:00');
-const [masterLockStart, setMasterLockStart] = useState('');
+    const [unlockEnd, setUnlockEnd] = useState('21:00');
+    const [lockDuration, setLockDuration] = useState('90 days');
+    const [masterDuration, setMasterDuration] = useState('90 days');
+    const [customDays, setCustomDays] = useState('');
+    const [useDailyWindowAfterEnd, setUseDailyWindowAfterEnd] = useState(false);
+    const [masterLockStart, setMasterLockStart] = useState('');
+    const [showPasswordModal, setShowPasswordModal] = useState(null);
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [dailyFocus, setDailyFocus] = useState('');
 
@@ -237,20 +242,33 @@ useEffect(() => {
       }, []);
 
       useEffect(() => {
-        localSaveData({ passwords, masterLockStart, dailyFocus });
-        apiSaveData({ passwords, masterLockStart, dailyFocus });
-      }, [passwords, masterLockStart, dailyFocus]);
+        localSaveData({ passwords, masterLockStart, masterDurationDays: DURATIONS[masterDuration], dailyFocus });
+        apiSaveData({ passwords, masterLockStart, masterDurationDays: DURATIONS[masterDuration], dailyFocus });
+      }, [passwords, masterLockStart, masterDuration, dailyFocus]);
 
-const addPassword = () => {
+const DURATIONS = {
+        '7 days': 7,
+        '30 days': 30,
+        '90 days': 90,
+        '1 year': 365
+      };
+
+      const addPassword = () => {
         if (!newPassword.trim()) return;
         const encrypted = btoa(newPassword);  // Simple base64
         const id = Date.now().toString();
         const [startH, startM] = unlockStart.split(':').map(Number);
         const [endH, endM] = unlockEnd.split(':').map(Number);
+        const presetDays = DURATIONS[lockDuration];
+        const durationDays = parseInt(customDays) > 0 ? parseInt(customDays) : presetDays;
+        const endDate = new Date(Date.now() + durationDays * 86400000).toISOString();
         const newPass = {
           id,
           encrypted,
           lockDate: new Date().toISOString(),
+          endDate,
+          durationDays,
+          useDailyWindowAfterEnd,
           unlockWindow: {
             start: `${startH.toString().padStart(2,'0')}:${startM.toString().padStart(2,'0')}`,
             end: `${endH.toString().padStart(2,'0')}:${endM.toString().padStart(2,'0')}`
@@ -262,8 +280,11 @@ const addPassword = () => {
 
       const toggleMasterLock = () => {
         if (isMasterLockedState) return;  // Immutable once on
+        const durationDays = DURATIONS[masterDuration];
+        const endDate = new Date(Date.now() + durationDays * 86400000).toISOString();
         setMasterLockStart(new Date().toISOString());
-        saveData({ masterLockStart: new Date().toISOString() });
+        localSaveData({ masterLockStart: new Date().toISOString(), masterEndDate: endDate, masterDurationDays: durationDays });
+        apiSaveData({ masterLockStart: new Date().toISOString(), masterEndDate: endDate, masterDurationDays: durationDays });
       };
 
       const openModal = () => setIsModalOpen(true);
@@ -279,15 +300,26 @@ const isInUnlockWindow = (pass) => {
         return currentMins >= startMins && currentMins <= endMins;
       };
 
-      const canViewPassword = (pass) => {
-        const lockTime = new Date(pass.lockDate).getTime();
-        const min24h = 24 * 60 * 60 * 1000;
-        return Date.now() >= lockTime + min24h && isInUnlockWindow(pass);
+const canViewPassword = (pass) => {
+        const now = Date.now();
+        const endTime = pass.endDate ? new Date(pass.endDate).getTime() : Infinity;
+        if (now < endTime) {
+          // Still locked - old logic
+          const lockTime = new Date(pass.lockDate).getTime();
+          const min24h = 24 * 60 * 60 * 1000;
+          return now >= lockTime + min24h && isInUnlockWindow(pass);
+        }
+        // EndDate passed
+        if (pass.useDailyWindowAfterEnd === false || pass.useDailyWindowAfterEnd === undefined) {
+          return true; // Permanent unlock
+        }
+        return isInUnlockWindow(pass); // Daily window after expiry
       };
 
-      const isMasterLockedState = masterLockStart ? 
-        Date.now() < new Date(masterLockStart).getTime() + (90 * 24 * 60 * 60 * 1000) 
-        : false;
+      const isMasterLockedState = masterLockStart && (
+          (masterEndDate && Date.now() < new Date(masterEndDate).getTime()) ||
+          (!masterEndDate && Date.now() < new Date(masterLockStart).getTime() + (90 * 24 * 60 * 60 * 1000))
+        );
 
       return (
         <div className="glass p-8 rounded-3xl max-w-4xl mx-auto shadow-2xl border-opacity-100">
@@ -299,13 +331,13 @@ const isInUnlockWindow = (pass) => {
           {!isMasterLockedState ? (
             <div className="bg-gray-800 p-8 rounded-2xl mb-8">
               <h2 className="text-2xl mb-6">Add Password to Vault</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Enter password/credential"
-                  className="bg-gray-700 p-3 sm:p-4 rounded-xl text-white placeholder-gray-500 col-span-1"
+                  className="bg-gray-700 p-3 sm:p-4 rounded-xl text-white placeholder-gray-500 col-span-1 sm:col-span-2 lg:col-span-1"
                 />
                 <div className="flex gap-2">
                   <label className="text-sm text-gray-400 self-center whitespace-nowrap">Start:</label>
@@ -325,6 +357,36 @@ const isInUnlockWindow = (pass) => {
                     className="bg-gray-700 p-3 sm:p-4 rounded-xl flex-1 min-h-[44px]"
                   />
                 </div>
+                <select
+                  value={lockDuration}
+                  onChange={(e) => setLockDuration(e.target.value)}
+                  className="bg-gray-700 p-3 sm:p-4 rounded-xl text-white min-h-[44px]"
+                >
+                  <option value="7 days">7 days</option>
+                  <option value="30 days">30 days</option>
+                  <option value="90 days">90 days</option>
+                  <option value="1 year">1 year</option>
+                </select>
+                <div className="flex flex-col gap-1">
+                  <input
+                    type="number"
+                    value={customDays}
+                    onChange={(e) => setCustomDays(e.target.value)}
+                    placeholder="Custom"
+                    min="1"
+                    className="bg-gray-700 p-3 rounded-xl text-white text-sm min-h-[44px]"
+                  />
+                  <label className="text-xs text-gray-500">Custom days</label>
+                </div>
+                <label className="flex items-center gap-2 p-3 bg-gray-700 rounded-xl min-h-[44px]">
+                  <input
+                    type="checkbox"
+                    checked={useDailyWindowAfterEnd}
+                    onChange={(e) => setUseDailyWindowAfterEnd(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 rounded"
+                  />
+                  <span className="text-sm text-gray-400">Daily window after?</span>
+                </label>
               </div>
 <div className="flex flex-col sm:flex-row gap-3 w-full">
                 <button
@@ -333,17 +395,30 @@ const isInUnlockWindow = (pass) => {
                 >
                   Lock Password
                 </button>
-                <button
-                  onClick={toggleMasterLock}
-                  className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl font-medium transition flex-1 min-h-[44px]"
-                >
-                  Master Lock (90 days)
-                </button>
+                <div className="flex gap-2">
+                  <select
+                    value={masterDuration}
+                    onChange={(e) => setMasterDuration(e.target.value)}
+                    className="bg-gray-700 p-3 sm:p-4 rounded-xl text-white flex-1 min-h-[44px]"
+                  >
+                    <option value="7 days">Master {7} days</option>
+                    <option value="30 days">Master {30} days</option>
+                    <option value="90 days">Master 90 days</option>
+                    <option value="1 year">Master 1 year</option>
+                  </select>
+                  <button
+                    onClick={toggleMasterLock}
+                    className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl font-medium transition min-h-[44px] whitespace-nowrap"
+                  >
+                    Activate Master
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
             <div className="bg-orange-900/50 border border-orange-500 p-6 rounded-xl mb-8 text-center">
-              <p className="text-xl">🔒 Master Locked until {new Date(new Date(masterLockStart).getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString()}. Immutable.</p>
+              <p className="text-xl">🔒 Master Locked until {masterEndDate ? new Date(masterEndDate).toLocaleDateString() : new Date(new Date(masterLockStart).getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString()}. Immutable.</p>
+              <p className="text-lg mt-2">{Math.ceil((masterEndDate ? new Date(masterEndDate).getTime() : new Date(masterLockStart).getTime() + 90 * 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60 * 24))} days remaining</p>
             </div>
           )}
 
@@ -356,7 +431,7 @@ const isInUnlockWindow = (pass) => {
                   const decrypted = canView ? atob(pass.encrypted) : '';
                   const viewPassword = () => {
                     if (canView) {
-                      alert(`Password: ${decrypted}`);
+                      setShowPasswordModal({pass, decrypted});
                     } else {
                       openModal();
                     }
@@ -371,7 +446,7 @@ const isInUnlockWindow = (pass) => {
                             onClick={viewPassword}
                             className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg transition text-sm"
                           >
-                            View Again
+                            Copy Password
                           </button>
                         </div>
                       ) : (
@@ -449,6 +524,52 @@ const isInUnlockWindow = (pass) => {
           {isModalOpen && (
             <RelapseModal onClose={closeModal} />
           )}
+          {showPasswordModal && (
+            <PasswordModal 
+              pass={showPasswordModal.pass}
+              decrypted={showPasswordModal.decrypted}
+              onClose={() => setShowPasswordModal(null)}
+            />
+          )}
+        </div>
+      );
+    }
+
+    function PasswordModal({ pass, decrypted, onClose }) {
+      const copyPassword = async () => {
+        try {
+          await navigator.clipboard.writeText(decrypted);
+          alert('Password copied to clipboard!');
+        } catch (err) {
+          alert('Failed to copy: ' + decrypted);
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-8">
+          <div className="bg-gray-900 border border-gray-700 rounded-3xl p-8 max-w-lg w-full mx-4 text-center">
+            <h3 className="text-2xl font-light mb-6 text-white">Unlocked Password</h3>
+            <div className="mb-6">
+              <p className="bg-green-900/50 p-4 rounded-xl font-mono text-lg break-all mb-4 select-all">
+                {decrypted}
+              </p>
+              <p className="text-sm text-gray-400">Duration: {pass.durationDays} days | Ends: {new Date(pass.endDate).toLocaleDateString()}</p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={copyPassword}
+                className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl font-medium transition"
+              >
+                Copy Password
+              </button>
+              <button
+                onClick={onClose}
+                className="bg-gray-700 hover:bg-gray-600 px-6 py-3 rounded-xl font-medium transition"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       );
     }

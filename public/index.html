@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Commitment Vault | Elite Protocol</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body { 
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); 
+      color: #f1f5f9; 
+      font-family: 'Inter', sans-serif; 
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    .glass { 
+      background: rgba(255, 255, 255, 0.03); 
+      backdrop-filter: blur(20px); 
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+    
+    .gradient-btn { 
+      background: linear-gradient(45deg, #ff512f, #dd2476); 
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .gradient-btn:hover { 
+      transform: translateY(-2px); 
+      box-shadow: 0 10px 25px rgba(221, 36, 118, 0.4);
+      filter: brightness(1.1);
+    }
+
+    .fade-in { animation: fadeIn 0.6s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Custom scrollbar for a clean UI */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+ <script type="text/babel">
+    const { useState, useEffect, useMemo } = React;
+
+    // Configuration for Backend Connection
+    const USER_ID = "elite_protocol_user_1"; // This could eventually come from a login
+    const API_BASE = "http://localhost:5000/api/vault";
+
+    const REASONS = {
+      Growth: [
+        "You cannot sprout in the same soil that withered you.", "Growth happens when you step beyond your comfort zone.", "Every ending is a new beginning in disguise.", "The pain of discipline is temporary; regret is forever.", "Transform your wounds into wisdom.", "You are the architect of your own transformation.", "Shed the old to make room for the new.", "Strength grows in the moments when you think you can't go on.", "Your potential is endless; stop limiting yourself.", "Bloom where you are planted, then choose better soil.", "The caterpillar thought the world was over; it was just a butterfly.", "Change is the law of life; adapt or perish.", "You don't drown by falling in water; you drown by staying there.", "The seed that falls in fertile ground grows tallest.", "Evolution demands sacrifice; let go to level up.", "Your future self is cheering for today's choices.", "Pain is the price of progress.", "Rebirth requires breaking the shell.", "Great things never come from comfort zones.", "Upgrade your soil; watch yourself flourish.", "The storm makes the oak strong."
+      ],
+      Energy: [
+        "Your focus is your currency; stop spending it on a closed chapter.", "Energy flows where attention goes.", "Guard your energy like your most precious asset.", "Low energy decisions lead to low energy outcomes.", "Redirect your power to what fuels you.", "Don't leak energy to yesterday's drama.", "Your time is your life; invest it wisely.", "Fatigue is the enemy of excellence.", "Channel your fire into creation, not consumption.", "Every 'yes' to distraction is a 'no' to destiny.", "Preserve your spark for what ignites you.", "Energy vampires drain; boundaries recharge.", "Momentum builds with consistent small wins.", "Rest is productive; burnout is not.", "Your vitality is your superpower.", "Stop pouring from an empty cup.", "High energy attracts high opportunities.", "Routine shapes your rhythm.", "Silence recharges what noise depletes.", "What you tolerate today, you accept tomorrow.", "Energy audit: cut what costs more than it gives."
+      ],
+      Possibility: [
+        "There are people you haven't met yet who will love you better.", "Doors you can't imagine are waiting to open.", "Your next chapter is your best yet.", "Opportunities multiply when you move forward.", "The universe rewards the bold.", "Better is coming; trust the process.", "Paths untaken hold your greatest adventures.", "Someone extraordinary is waiting for your healed heart.", "Your breakthrough is closer than your breakdown.", "New horizons call; answer them.", "Limiting beliefs block infinite potential.", "The right connections arrive at the right time.", "Serendipity favors the prepared mind.", "Your story isn't over; it's just beginning.", "Unknown blessings await your next step.", "What if the best hasn't arrived yet?", "Open hands receive more than closed fists.", "The future you want is being built now.", "Magic happens outside familiarity.", "Your tribe is searching for you too.", "Possibility lives in 'what if.'"
+      ],
+      SelfRespect: [
+        "Choosing yourself is never a loss.", "You set the standard for how others treat you.", "Self-love is not selfish; it's survival.", "Your worth isn't negotiable.", "Walk away from what disrespects your soul.", "Healthy boundaries = healthy self-esteem.", "You deserve spaces that make you bloom.", "Never beg for a seat at someone else's table.", "Your peace is non-negotiable.", "Standards aren't walls; they're filters.", "Love yourself enough to say no.", "Your time has value; protect it.", "Self-respect attracts mutual respect.", "Compromise erodes character.", "You can't pour from an empty vessel.", "Dignity leaves no room for desperation.", "Value yourself; the world follows.", "No is a complete sentence.", "Your growth demands better environments.", "Self-betrayal hurts more than rejection.", "Rise to your own expectations."
+      ],
+      "Future Focus": [
+        "The version of you three months from now is counting on your discipline today.", "Delayed gratification builds empires.", "Future you thanks present you.", "Small sacrifices yield massive rewards.", "Vision pulls stronger than temptation pushes.", "Compound your choices daily.", "Your tomorrow mirrors today's habits.", "Invest in legacy, not instant.", "Discipline is future freedom.", "Plant seeds today for tomorrow's harvest.", "The long game wins.", "Patience compounds like interest.", "Future wealth starts with present restraint.", "One year from now, you'll wish you started today.", "Sacrifices today = stories tomorrow.", "Vision > vibration.", "Delayed pleasure = permanent gain.", "Your future self is watching.", "Consistency over intensity.", "Build the life you preach.", "Time invested never returns wasted."
+      ]
+    };
+
+    function App() {
+      const [passwords, setPasswords] = useState([]);
+      const [newPassword, setNewPassword] = useState('');
+      const [startTime, setStartTime] = useState('20:00');
+      const [endTime, setEndTime] = useState('21:00');
+      const [lockDays, setLockDays] = useState('90');
+      const [customDays, setCustomDays] = useState('');
+      const [dailyFocus, setDailyFocus] = useState('');
+      const [masterLockStart, setMasterLockStart] = useState(() => localStorage.getItem('master_lock'));
+      const [currentTime, setCurrentTime] = useState(new Date());
+      const [selectedPass, setSelectedPass] = useState(null);
+      const [isLoading, setIsLoading] = useState(false);
+
+      // Fetch initial data from Backend
+      useEffect(() => {
+        const fetchVault = async () => {
+          try {
+            const response = await fetch(`${API_BASE}/${USER_ID}`);
+            const data = await response.json();
+            setPasswords(data.passwords || []);
+            setDailyFocus(data.dailyFocus || '');
+          } catch (err) {
+            console.error("❌ Backend sync error:", err);
+          }
+        };
+        fetchVault();
+      }, []);
+
+      // Clock logic
+      useEffect(() => {
+        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+        return () => clearInterval(timer);
+      }, []);
+
+      const dailyReason = useMemo(() => {
+        const day = currentTime.getDate();
+        const cats = Object.keys(REASONS);
+        const cat = cats[day % cats.length];
+        const quote = REASONS[cat][(day * 13) % REASONS[cat].length];
+        return { cat, quote };
+      }, [currentTime.getDate()]);
+
+      const addPassword = async () => {
+        if (!newPassword) return;
+        setIsLoading(true);
+
+        const payload = {
+          encrypted: btoa(newPassword), // Client-side encoding
+          days: customDays ? parseInt(customDays) : parseInt(lockDays),
+          window: { start: startTime, end: endTime }
+        };
+
+        try {
+          const response = await fetch(`${API_BASE}/${USER_ID}/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            setPasswords(data.passwords);
+            setNewPassword('');
+            setCustomDays('');
+            console.log("✅ Credential sealed in backend.");
+          }
+        } catch (err) {
+          alert("Vault connection failed. Ensure backend is running.");
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      const handleFocusChange = async (val) => {
+        setDailyFocus(val);
+        // Patch to backend
+        try {
+          await fetch(`${API_BASE}/${USER_ID}/focus`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ dailyFocus: val })
+          });
+        } catch (err) {
+          console.error("Focus sync failed");
+        }
+      };
+
+      const checkTimeAccess = (pass) => {
+        const now = currentTime.getHours() * 60 + currentTime.getMinutes();
+        const [sH, sM] = pass.window.start.split(':').map(Number);
+        const [eH, eM] = pass.window.end.split(':').map(Number);
+        return now >= (sH * 60 + sM) && now <= (eH * 60 + eM);
+      };
+
+      const startMasterLock = () => {
+        const timestamp = new Date().toISOString();
+        setMasterLockStart(timestamp);
+        localStorage.setItem('master_lock', timestamp);
+      };
+
+      return (
+        <div className="max-w-6xl mx-auto p-4 md:p-12 fade-in">
+          <header className="text-center mb-16">
+            <h1 className="text-5xl font-black tracking-tighter mb-4 italic">
+              DIGITAL COMMITMENT <span className="text-pink-500">VAULT</span>
+            </h1>
+            <div className="flex justify-center items-center gap-4 text-gray-400 font-mono text-sm">
+              <span className="bg-white/5 px-4 py-1 rounded-full border border-white/10">
+                SYSTEM_LOCAL: {currentTime.toLocaleTimeString()}
+              </span>
+            </div>
+          </header>
+
+          <div className="grid lg:grid-cols-3 gap-8">
+            {/* Left: Dashboard */}
+            <div className="space-y-6">
+              <div className="glass p-8 rounded-[2rem]">
+                <h3 className="text-xs font-bold text-pink-500 uppercase tracking-[0.2em] mb-6">Protocol Status</h3>
+                {masterLockStart ? (
+                  <div className="text-center">
+                    <p className="text-5xl font-black mb-2">
+                      {Math.max(0, Math.ceil((new Date(masterLockStart).getTime() + (90 * 86400000) - Date.now()) / 86400000))}d
+                    </p>
+                    <p className="text-xs text-gray-500 uppercase font-bold">Remaining in 90-Day Challenge</p>
+                  </div>
+                ) : (
+                  <button onClick={startMasterLock} className="w-full py-4 border-2 border-pink-500/30 text-pink-500 rounded-2xl font-bold hover:bg-pink-500 hover:text-white transition-all uppercase text-xs tracking-widest">
+                    Activate Master Protocol
+                  </button>
+                )}
+              </div>
+
+              <div className="glass p-8 rounded-[2rem] border-l-4 border-indigo-500">
+                <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-widest mb-4">Daily Thought: {dailyReason.cat}</h3>
+                <p className="text-xl italic leading-relaxed font-light">"{dailyReason.quote}"</p>
+              </div>
+
+              <div className="glass p-8 rounded-[2rem]">
+                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4">Today's Focus</h3>
+                <textarea 
+                  className="w-full bg-black/30 border border-white/5 rounded-2xl p-5 text-sm focus:ring-2 focus:ring-pink-500 outline-none h-40 transition-all placeholder:text-gray-700"
+                  placeholder="What will you build today?"
+                  value={dailyFocus}
+                  onChange={(e) => handleFocusChange(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Right: Vault System */}
+            <div className="lg:col-span-2 space-y-8">
+              {!masterLockStart && (
+                <section className="glass p-10 rounded-[2.5rem] relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 blur-3xl rounded-full"></div>
+                  <h2 className="text-2xl font-bold mb-8">Lock New Credential</h2>
+                  <div className="grid md:grid-cols-2 gap-6 mb-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-gray-500 ml-2">Secure Credential</label>
+                      <input 
+                        type="password" placeholder="••••••••"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-pink-500 transition-all"
+                        value={newPassword} onChange={e => setNewPassword(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] uppercase font-bold text-gray-500 ml-2">Lock Duration</label>
+                      <div className="flex gap-2">
+                        <select className="bg-white/5 border border-white/10 rounded-2xl p-4 flex-1 outline-none appearance-none" value={lockDays} onChange={e => setLockDays(e.target.value)}>
+                          <option value="7">7 Days</option>
+                          <option value="30">30 Days</option>
+                          <option value="90">90 Days</option>
+                          <option value="365">1 Year</option>
+                        </select>
+                        <input type="number" placeholder="Custom" className="bg-white/5 border border-white/10 rounded-2xl p-4 w-28 outline-none" value={customDays} onChange={e => setCustomDays(e.target.value)} />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-black/40 p-6 rounded-3xl border border-white/5 mb-8">
+                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-4 text-center tracking-widest">Daily Viewing Window</p>
+                    <div className="flex justify-center items-center gap-6">
+                      <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="bg-transparent text-2xl font-mono outline-none text-pink-500 cursor-pointer"/>
+                      <span className="text-gray-700 font-black">—</span>
+                      <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-transparent text-2xl font-mono outline-none text-pink-500 cursor-pointer"/>
+                    </div>
+                  </div>
+
+                  <button 
+                    disabled={isLoading}
+                    onClick={addPassword} 
+                    className="gradient-btn w-full py-5 rounded-2xl font-black uppercase tracking-[0.3em] text-sm disabled:opacity-50"
+                  >
+                    {isLoading ? "Syncing..." : "Seal Into Vault"}
+                  </button>
+                </section>
+              )}
+
+              <section className="space-y-4">
+                <div className="flex items-center justify-between px-4">
+                  <h3 className="text-xl font-bold tracking-tight">Vault Archives</h3>
+                  <span className="text-xs bg-white/5 px-3 py-1 rounded-full text-gray-500">{passwords.length} items secured</span>
+                </div>
+                <div className="grid gap-4">
+                  {passwords.map(pass => (
+                    <div key={pass._id || pass.id} className="glass p-8 rounded-[2rem] flex flex-col md:flex-row justify-between items-center group hover:bg-white/[0.05] transition-all">
+                      <div className="text-center md:text-left mb-6 md:mb-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></div>
+                          <p className="text-pink-400 font-mono font-bold tracking-tighter">WINDOW: {pass.window.start} — {pass.window.end}</p>
+                        </div>
+                        <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest ml-4">Expires: {new Date(pass.endDate).toLocaleDateString()}</p>
+                      </div>
+                      <button 
+                        onClick={() => setSelectedPass(pass)}
+                        className="bg-white/5 hover:bg-white/10 px-12 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all border border-white/5 group-hover:border-pink-500/50"
+                      >
+                        Unlock
+                      </button>
+                    </div>
+                  ))}
+                  {passwords.length === 0 && (
+                    <div className="text-center py-20 glass rounded-[2.5rem] border-dashed border-2 border-white/5">
+                      <p className="text-gray-600 font-medium italic">The vault is currently empty.</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            </div>
+          </div>
+
+          {/* Intervention / Unlock Modal */}
+          {selectedPass && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-6">
+              <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setSelectedPass(null)}></div>
+              <div className="relative glass p-10 md:p-16 rounded-[3rem] max-w-2xl w-full text-center fade-in border border-white/10">
+                
+                {checkTimeAccess(selectedPass) ? (
+                  <div className="space-y-8">
+                    <div className="inline-block p-4 rounded-full bg-green-500/10 mb-4">
+                      <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <h2 className="text-3xl font-black uppercase tracking-widest">Protocol Unlocked</h2>
+                    <div className="bg-black/50 p-10 rounded-[2rem] border border-white/10 break-all">
+                      <code className="text-4xl font-mono text-white select-all">
+                        {atob(selectedPass.encrypted)}
+                      </code>
+                    </div>
+                    <button 
+                      onClick={() => { navigator.clipboard.writeText(atob(selectedPass.encrypted)); alert("Credential Copied."); }}
+                      className="gradient-btn w-full py-5 rounded-2xl font-black uppercase tracking-widest"
+                    >
+                      Copy to Clipboard
+                    </button>
+                    <button onClick={() => setSelectedPass(null)} className="text-gray-600 hover:text-white transition-colors uppercase text-[10px] font-black tracking-widest">Seal Again</button>
+                  </div>
+                ) : (
+                  <div className="py-6">
+                    <h2 className="text-4xl font-black mb-10 tracking-tighter">PAUSE.</h2>
+                    <p className="text-2xl md:text-3xl font-light leading-relaxed text-gray-300 mb-12">
+                      This is your past calling, but your future is waiting. Some doors are closed for a reason. Let go of what no longer serves you.
+                    </p>
+                    
+                    <div className="bg-red-500/10 border border-red-500/20 p-6 rounded-2xl mb-10">
+                      <p className="text-xs text-red-500 uppercase font-bold tracking-[0.2em] mb-2">Window Restricted</p>
+                      <p className="text-sm text-gray-500">
+                        Viewable daily only: <span className="text-white font-mono">{selectedPass.window.start} — {selectedPass.window.end}</span>
+                      </p>
+                    </div>
+
+                    <button 
+                      onClick={() => setSelectedPass(null)} 
+                      className="bg-white/10 hover:bg-white/20 px-16 py-5 rounded-2xl font-black uppercase tracking-widest text-xs border border-white/5 transition-all"
+                    >
+                      I Understand
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
