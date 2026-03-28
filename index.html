@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Commitment Vault</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            'zen': ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    
+    body { 
+      @apply bg-gradient-to-br from-[#0f0c29] via-[#302b63] to-[#24243e] text-gray-100 font-['Inter'];
+      font-feature-settings: 'calt' 1;
+    }
+    
+    .glass { 
+      background: rgba(255,255,255,0.1); 
+      backdrop-filter: blur(20px); 
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    
+    .gradient-btn { 
+      background: linear-gradient(45deg, #ff512f, #dd2476); 
+    }
+    
+    @keyframes fadeIn { 
+      from { opacity: 0; transform: translateY(20px); } 
+      to { opacity: 1; transform: translateY(0); } 
+    }
+    
+    .fade-in { animation: fadeIn 0.8s ease-out; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <div id="root" class="p-4 sm:p-8 md:p-12 lg:p-16 max-w-7xl mx-auto min-h-screen"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    const REASONS = {
+      Growth: [
+        "You cannot sprout in the same soil that withered you.",
+        "Growth happens when you step beyond your comfort zone.",
+        "Every ending is a new beginning in disguise.",
+        "The pain of discipline is temporary; regret is forever.",
+        "Transform your wounds into wisdom.",
+        "You are the architect of your own transformation.",
+        "Shed the old to make room for the new.",
+        "Strength grows in the moments when you think you can't go on.",
+        "Your potential is endless; stop limiting yourself.",
+        "Bloom where you are planted, then choose better soil.",
+        "The caterpillar thought the world was over; it was just a butterfly.",
+        "Change is the law of life; adapt or perish.",
+        "You don't drown by falling in water; you drown by staying there.",
+        "The seed that falls in fertile ground grows tallest.",
+        "Evolution demands sacrifice; let go to level up.",
+        "Your future self is cheering for today's choices.",
+        "Pain is the price of progress.",
+        "Rebirth requires breaking the shell.",
+        "Great things never come from comfort zones.",
+        "Upgrade your soil; watch yourself flourish.",
+        "The storm makes the oak strong."
+      ],
+      Energy: [
+        "Your focus is your currency; stop spending it on a closed chapter.",
+        "Energy flows where attention goes.",
+        "Guard your energy like your most precious asset.",
+        "Low energy decisions lead to low energy outcomes.",
+        "Redirect your power to what fuels you.",
+        "Don't leak energy to yesterday's drama.",
+        "Your time is your life; invest it wisely.",
+        "Fatigue is the enemy of excellence.",
+        "Channel your fire into creation, not consumption.",
+        "Every 'yes' to distraction is a 'no' to destiny.",
+        "Preserve your spark for what ignites you.",
+        "Energy vampires drain; boundaries recharge.",
+        "Momentum builds with consistent small wins.",
+        "Rest is productive; burnout is not.",
+        "Your vitality is your superpower.",
+        "Stop pouring from an empty cup.",
+        "High energy attracts high opportunities.",
+        "Routine shapes your rhythm.",
+        "Silence recharges what noise depletes.",
+        "What you tolerate today, you accept tomorrow.",
+        "Energy audit: cut what costs more than it gives."
+      ],
+      Possibility: [
+        "There are people you haven't met yet who will love you better.",
+        "Doors you can't imagine are waiting to open.",
+        "Your next chapter is your best yet.",
+        "Opportunities multiply when you move forward.",
+        "The universe rewards the bold.",
+        "Better is coming; trust the process.",
+        "Paths untaken hold your greatest adventures.",
+        "Someone extraordinary is waiting for your healed heart.",
+        "Your breakthrough is closer than your breakdown.",
+        "New horizons call; answer them.",
+        "Limiting beliefs block infinite potential.",
+        "The right connections arrive at the right time.",
+        "Serendipity favors the prepared mind.",
+        "Your story isn't over; it's just beginning.",
+        "Unknown blessings await your next step.",
+        "What if the best hasn't arrived yet?",
+        "Open hands receive more than closed fists.",
+        "The future you want is being built now.",
+        "Magic happens outside familiarity.",
+        "Your tribe is searching for you too.",
+        "Possibility lives in 'what if.'"
+      ],
+      SelfRespect: [
+        "Choosing yourself is never a loss.",
+        "You set the standard for how others treat you.",
+        "Self-love is not selfish; it's survival.",
+        "Your worth isn't negotiable.",
+        "Walk away from what disrespects your soul.",
+        "Healthy boundaries = healthy self-esteem.",
+        "You deserve spaces that make you bloom.",
+        "Never beg for a seat at someone else's table.",
+        "Your peace is non-negotiable.",
+        "Standards aren't walls; they're filters.",
+        "Love yourself enough to say no.",
+        "Your time has value; protect it.",
+        "Self-respect attracts mutual respect.",
+        "Compromise erodes character.",
+        "You can't pour from an empty vessel.",
+        "Dignity leaves no room for desperation.",
+        "Value yourself; the world follows.",
+        "No is a complete sentence.",
+        "Your growth demands better environments.",
+        "Self-betrayal hurts more than rejection.",
+        "Rise to your own expectations."
+      ],
+      "Future Focus": [
+        "The version of you three months from now is counting on your discipline today.",
+        "Delayed gratification builds empires.",
+        "Future you thanks present you.",
+        "Small sacrifices yield massive rewards.",
+        "Vision pulls stronger than temptation pushes.",
+        "Compound your choices daily.",
+        "Your tomorrow mirrors today's habits.",
+        "Invest in legacy, not instant.",
+        "Discipline is future freedom.",
+        "Plant seeds today for tomorrow's harvest.",
+        "The long game wins.",
+        "Patience compounds like interest.",
+        "Future wealth starts with present restraint.",
+        "One year from now, you'll wish you started today.",
+        "Sacrifices today = stories tomorrow.",
+        "Vision > vibration.",
+        "Delayed pleasure = permanent gain.",
+        "Your future self is watching.",
+        "Consistency over intensity.",
+        "Build the life you preach.",
+        "Time invested never returns wasted."
+      ]
+    };
+
+    function App() {
+      const [passwords, setPasswords] = useState([]);
+      const [newPassword, setNewPassword] = useState('');
+      const [unlockStart, setUnlockStart] = useState('20:00');
+      const [unlockEnd, setUnlockEnd] = useState('21:00');
+const [masterLockStart, setMasterLockStart] = useState('');
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const [dailyFocus, setDailyFocus] = useState('');
+
+      const USER_ID = 'demo-user'; // Change for multi-user
+      const API_URL = 'http://localhost:5000';
+
+      const loadData = useCallback(async () => {
+        try {
+          const res = await fetch(`${API_URL}/vault/${USER_ID}`);
+          const data = await res.json();
+          setPasswords(data.passwords || []);
+          setMasterLockStart(data.masterLockStart || '');
+          setDailyFocus(data.dailyFocus || '');
+        } catch (e) {
+          console.error('Load error:', e);
+          // Fallback to localStorage
+          const localData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          setPasswords(localData.passwords || []);
+          setMasterLockStart(localData.masterLockStart || '');
+          setDailyFocus(localData.dailyFocus || '');
+        }
+      }, []);
+
+      const saveData = useCallback((updates) => {
+        try {
+          const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          Object.assign(data, updates);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.error('Save error:', e);
+        }
+      }, []);
+
+useEffect(() => {
+        loadData();
+      }, [loadData]);
+
+      const STORAGE_KEY = 'commitmentVault';
+
+      const apiSaveData = useCallback(async (updates) => {
+        try {
+          await fetch(`${API_URL}/vault/${USER_ID}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates)
+          });
+        } catch (e) {
+          console.error('API Save error:', e);
+        }
+      }, []);
+
+      const localSaveData = useCallback((updates) => {
+        try {
+          const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+          Object.assign(data, updates);
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch (e) {
+          console.error('Local Save error:', e);
+        }
+      }, []);
+
+      useEffect(() => {
+        localSaveData({ passwords, masterLockStart, dailyFocus });
+        apiSaveData({ passwords, masterLockStart, dailyFocus });
+      }, [passwords, masterLockStart, dailyFocus]);
+
+const addPassword = () => {
+        if (!newPassword.trim()) return;
+        const encrypted = btoa(newPassword);  // Simple base64
+        const id = Date.now().toString();
+        const [startH, startM] = unlockStart.split(':').map(Number);
+        const [endH, endM] = unlockEnd.split(':').map(Number);
+        const newPass = {
+          id,
+          encrypted,
+          lockDate: new Date().toISOString(),
+          unlockWindow: {
+            start: `${startH.toString().padStart(2,'0')}:${startM.toString().padStart(2,'0')}`,
+            end: `${endH.toString().padStart(2,'0')}:${endM.toString().padStart(2,'0')}`
+          }
+        };
+        setPasswords([...passwords, newPass]);
+        setNewPassword('');
+      };
+
+      const toggleMasterLock = () => {
+        if (isMasterLockedState) return;  // Immutable once on
+        setMasterLockStart(new Date().toISOString());
+        saveData({ masterLockStart: new Date().toISOString() });
+      };
+
+      const openModal = () => setIsModalOpen(true);
+      const closeModal = () => setIsModalOpen(false);
+
+const isInUnlockWindow = (pass) => {
+        const now = new Date();
+        const currentMins = now.getHours() * 60 + now.getMinutes();
+        const [startHour, startMin] = pass.unlockWindow.start.split(':').map(Number);
+        const [endHour, endMin] = pass.unlockWindow.end.split(':').map(Number);
+        const startMins = startHour * 60 + startMin;
+        const endMins = endHour * 60 + endMin;
+        return currentMins >= startMins && currentMins <= endMins;
+      };
+
+      const canViewPassword = (pass) => {
+        const lockTime = new Date(pass.lockDate).getTime();
+        const min24h = 24 * 60 * 60 * 1000;
+        return Date.now() >= lockTime + min24h && isInUnlockWindow(pass);
+      };
+
+      const isMasterLockedState = masterLockStart ? 
+        Date.now() < new Date(masterLockStart).getTime() + (90 * 24 * 60 * 60 * 1000) 
+        : false;
+
+      return (
+        <div className="glass p-8 rounded-3xl max-w-4xl mx-auto shadow-2xl border-opacity-100">
+          <header className="text-center mb-12">
+            <h1 className="text-5xl font-light text-white mb-4">Digital Commitment Vault</h1>
+            <p className="text-xl text-gray-400">Lock away distractions. Unlock your future.</p>
+          </header>
+
+          {!isMasterLockedState ? (
+            <div className="bg-gray-800 p-8 rounded-2xl mb-8">
+              <h2 className="text-2xl mb-6">Add Password to Vault</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter password/credential"
+                  className="bg-gray-700 p-3 sm:p-4 rounded-xl text-white placeholder-gray-500 col-span-1"
+                />
+                <div className="flex gap-2">
+                  <label className="text-sm text-gray-400 self-center whitespace-nowrap">Start:</label>
+                  <input
+                    type="time"
+                    value={unlockStart}
+                    onChange={(e) => setUnlockStart(e.target.value)}
+                    className="bg-gray-700 p-3 sm:p-4 rounded-xl flex-1 min-h-[44px]"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <label className="text-sm text-gray-400 self-center whitespace-nowrap">End:</label>
+                  <input
+                    type="time"
+                    value={unlockEnd}
+                    onChange={(e) => setUnlockEnd(e.target.value)}
+                    className="bg-gray-700 p-3 sm:p-4 rounded-xl flex-1 min-h-[44px]"
+                  />
+                </div>
+              </div>
+<div className="flex flex-col sm:flex-row gap-3 w-full">
+                <button
+                  onClick={addPassword}
+                  className="gradient-btn hover:scale-105 shadow-lg hover:shadow-xl px-6 py-3 rounded-2xl font-semibold transition-all duration-300 text-white flex-1 min-h-[44px]"
+                >
+                  Lock Password
+                </button>
+                <button
+                  onClick={toggleMasterLock}
+                  className="bg-green-600 hover:bg-green-700 px-6 py-3 rounded-xl font-medium transition flex-1 min-h-[44px]"
+                >
+                  Master Lock (90 days)
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-orange-900/50 border border-orange-500 p-6 rounded-xl mb-8 text-center">
+              <p className="text-xl">🔒 Master Locked until {new Date(new Date(masterLockStart).getTime() + 90 * 24 * 60 * 60 * 1000).toLocaleDateString()}. Immutable.</p>
+            </div>
+          )}
+
+          <div className="grid lg:grid-cols-2 gap-8">
+            <div>
+              <h2 className="text-3xl mb-6">Vault</h2>
+              <div className="space-y-4">
+                {passwords.map((pass) => {
+                  const canView = canViewPassword(pass);
+                  const decrypted = canView ? atob(pass.encrypted) : '';
+                  const viewPassword = () => {
+                    if (canView) {
+                      alert(`Password: ${decrypted}`);
+                    } else {
+                      openModal();
+                    }
+                  };
+                  return (
+                    <div key={pass.id} className="bg-gray-800 p-6 rounded-xl border-l-4 border-blue-500">
+                      <p className="text-lg mb-2 font-medium">Locked Credential {pass.unlockWindow.start}–{pass.unlockWindow.end}</p>
+                      {canView ? (
+                        <div>
+                          <p className="bg-green-900/50 p-3 rounded-lg font-mono text-sm mb-2 break-all">{decrypted}</p>
+                          <button
+                            onClick={viewPassword}
+                            className="bg-green-600 hover:bg-green-700 px-6 py-2 rounded-lg transition text-sm"
+                          >
+                            View Again
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={viewPassword}
+                          className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-lg transition"
+                        >
+                          Unlock
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                {passwords.length === 0 && (
+                  <p className="text-gray-500 italic">No locked passwords yet.</p>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-3xl mb-6">Future Focus Dashboard</h2>
+              {masterLockStart ? (
+                <div className="bg-gray-800 p-6 rounded-xl mb-6">
+                  <p className="text-xl mb-2">90-Day Countdown</p>
+                  <div className="text-3xl font-mono">
+                    {Math.ceil((new Date(masterLockStart).getTime() + 90 * 24 * 60 * 60 * 1000 - Date.now()) / (1000 * 60 * 60 * 24))} days
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-800 p-6 rounded-xl mb-6 text-gray-500 italic">
+                  Activate Master Lock to start
+                </div>
+              )}
+              <textarea
+                value={dailyFocus}
+                onChange={(e) => setDailyFocus(e.target.value)}
+                placeholder="Today's focus task..."
+                className="w-full bg-gray-700 p-4 rounded-xl resize-vertical h-32 mb-4 text-white placeholder-gray-500"
+              />
+              <div className="space-y-4">
+                <div>
+                  <p className="text-lg mb-2 font-medium">Reason of the Day:</p>
+                  <button
+                    onClick={() => {
+                      const today = new Date().getDate();
+                      const categoryIndex = today % Object.keys(REASONS).length;
+                      const categories = Object.keys(REASONS);
+                      const category = categories[categoryIndex];
+                      const reasonIndex = (today * 37) % REASONS[category].length;
+                      alert(REASONS[category][reasonIndex]);
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700 w-full p-4 rounded-xl text-left font-medium transition"
+                  >
+                    💡 Show Reason of the Day
+                  </button>
+                </div>
+                <button
+                  onClick={() => {
+                    const category = prompt('Choose category (Growth, Energy, Possibility, SelfRespect, Future Focus):') || 'Growth';
+                    if (REASONS[category]) {
+                      const randomReason = REASONS[category][Math.floor(Math.random() * REASONS[category].length)];
+                      alert(randomReason);
+                    } else {
+                      alert('Invalid category. Try Growth, Energy, Possibility, SelfRespect, or Future Focus.');
+                    }
+                  }}
+                  className="bg-purple-600 hover:bg-purple-700 w-full p-4 rounded-xl transition"
+                >
+                  📜 Show Random Reason from Category
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {isModalOpen && (
+            <RelapseModal onClose={closeModal} />
+          )}
+        </div>
+      );
+    }
+
+    function RelapseModal({ onClose }) {
+      return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-8">
+          <div className="bg-gray-900 border border-gray-700 rounded-3xl p-12 max-w-2xl max-h-[90vh] overflow-y-auto text-center">
+            <h3 className="text-3xl font-light mb-8 text-white">Pause.</h3>
+            <p className="text-xl leading-relaxed mb-12 opacity-90">
+              This is your past calling, but your future is waiting. Some doors are closed for a reason. Let go of what no longer serves you.
+            </p>
+            <button
+              onClick={onClose}
+              className="bg-gray-700 hover:bg-gray-600 px-12 py-4 rounded-2xl text-lg transition font-medium"
+            >
+              I Understand
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
