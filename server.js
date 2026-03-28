@@ -9,6 +9,7 @@ const PORT = process.env.PORT || 5000;
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.static(__dirname));
 
 // MongoDB Schema
 const vaultSchema = new mongoose.Schema({
@@ -60,8 +61,9 @@ app.post('/vault/:userId', async (req, res) => {
   }
 });
 
-// Health check
-app.get('/', (req, res) => res.send('Vault server running'));
+// Static files take priority, API routes after
+// Health check (now only if no index.html)
+// app.get('/', (req, res) => res.send('Vault server running'));
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
