@@ -1,13 +1,12 @@
-# Fix Time Fetch Errors - Server Time Cache Plan
+# Task Progress: Fix API Time Fetch Errors
 
-## Step 1: Add serverTime state and fetch effect ✅
-## Step 2: Refactor checkTimeAccess to sync + use cache ✅
-## Step 3: Update App component ✅
-## Step 4: Test & Complete ✅
+**✅ Plan Approved**
 
-**Completed**: Eliminated repeated fetch errors. Now uses cached server time (refreshed every 5min), tamper-proof (ignores local clock), fail-closed on API failure, clean console.
-- Test online: correct unlocks
-- Test offline/fetch fail: deny access, no spam
-- Tamper local clock: verify ignores it
+**TODO Steps:**
+- [✅] 1. Edit server.js: Add /api/time GET endpoint returning {datetime: new Date().toISOString()}
+- [✅] 2. Edit public/index.html: Replace worldtimeapi fetch URL with `${API_URL}/api/time`
+- [✅] 3. Test: npm start, check console has no errors, verify serverTime loads
+- [✅] 4. attempt_completion
 
-Updated: Plan approved for server-time priority.
+**Task Complete**
+

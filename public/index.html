@@ -106,7 +106,7 @@
       useEffect(() => {
         const fetchServerTime = async () => {
           try {
-            const response = await fetch('https://worldtimeapi.org/api/timezone/Etc/UTC');
+            const response = await fetch(`${API_URL}/api/time`);
             const data = await response.json();
             setServerTime(new Date(data.datetime));
           } catch (err) {

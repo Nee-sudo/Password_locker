@@ -105,6 +105,11 @@ app.patch('/api/vault/:userId/focus', async (req, res) => {
   }
 });
 
+// 4. Server Time Endpoint (Fixes worldtimeapi errors)
+app.get('/api/time', (req, res) => {
+  res.json({ datetime: new Date().toISOString() });
+});
+
 // --- SERVER INITIALIZATION ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
