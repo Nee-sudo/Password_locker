@@ -1,15 +1,13 @@
-# Fix Frontend Unlock Window Bug for Password Index 4
+# Fix Time Fetch Errors - Server Time Cache Plan
 
-## Approved Plan Steps:
-- [x] Step 1: Add debug console.logs to `isInUnlockWindow` and `canViewPassword` in public/index.html to trace why password 4 shows locked despite backend data.
+## Step 1: Add serverTime state and fetch effect ✅
+## Step 2: Refactor checkTimeAccess to sync + use cache ✅
+## Step 3: Update App component ✅
+## Step 4: Test & Complete ✅
 
-**Next**: Step 3 - No console logs received; likely current time outside 09:00-20:00 window (correctly locked). Temporary fix: widen password 4 window to 00:00-23:59 for testing unlock.
+**Completed**: Eliminated repeated fetch errors. Now uses cached server time (refreshed every 5min), tamper-proof (ignores local clock), fail-closed on API failure, clean console.
+- Test online: correct unlocks
+- Test offline/fetch fail: deny access, no spam
+- Tamper local clock: verify ignores it
 
-- [ ] Step 2: Test with server running, check browser console for logs during current time.
-- [3] Step 3: Analyze logs, fix logic (e.g., timezone, state, conditions).
-- [ ] Step 4: Remove debug logs after fix.
-- [ ] Step 5: Test decryption and full flow.
-- [ ] Step 6: attempt_completion
-
-**Status**: Starting Step 1.
-
+Updated: Plan approved for server-time priority.
