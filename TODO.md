@@ -1,13 +1,16 @@
-# Task Progress: Add endDate Bypass Logic
+# Add Bottom Navigation Bar to Vault and Graph Pages
 
-**✅ Plan Approved**
+Status: In Progress
 
-**TODO Steps:**
-- [ ] 1. Create TODO.md with approved plan steps
-- [✅] 2. Edit public/index.html: Add isExpired() check and update modal logic for endDate bypass
-- [✅] 3. Test changes: Run server, verify expired passwords show directly, non-expired use time window
-- [✅] 4. Update TODO.md progress
-- [ ] 5. attempt_completion
+## Steps:
+- [x] 1. Update body styles in public/index.html and Productivity/index.html to add padding-bottom for nav space
+- [x] 2. Add navigation HTML, CSS classes, and JS to Productivity/index.html
+- [x] 3. Add navigation HTML and JS to public/index.html (Tailwind version)
+- [ ] 4. Test navigation, active states, responsive design
+- [ ] 5. Mark complete and attempt_completion
 
-**Next**: Implementing step 2.
+## Details
+Follow approved plan for glassmorphism fixed bottom nav with Vault (/) and Graph (/graph) links.
+Icons: SVG home and chart.
+Active state via pathname check.
 
