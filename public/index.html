@@ -2,7 +2,12 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#ec4899">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-touch-fullscreen" content="yes">
+  <link rel="manifest" href="/manifest.json">
   <title>Digital Commitment Vault | Elite Protocol</title>
   <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
@@ -121,7 +126,20 @@
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <!-- Splash Screen -->
+  <div id="splash" style="position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f1f5f9;font-family:'Inter',sans-serif;text-align:center;padding:2rem;opacity:1;transition:opacity 0.5s ease-out;">
+    <div style="width:80px;height:80px;border:3px solid rgba(236,72,153,0.3);border-top:3px solid #ec4899;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:2rem;"></div>
+    <h2 style="font-size:1.5rem;font-weight:700;margin:0 0 1rem 0;">Digital Commitment Vault</h2>
+    <div class="loading-bar" style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:1rem;">
+      <div style="height:100%;background:linear-gradient(90deg,#ec4899,#ff512f);width:0%;transition:width 0.1s ease;border-radius:2px;"></div>
+    </div>
+    <p style="opacity:0.8;font-size:0.9rem;">Loading protocol...</p>
+  </div>
+  <div id="root" style="opacity:0;transition:opacity 0.3s ease-in;"></div>
+
+  <style>
+    @keyframes spin { to { transform:rotate(360deg); } }
+  </style>
 
   <script type="text/babel">
     const { useState, useEffect, useMemo } = React;
@@ -154,14 +172,25 @@
       const [serverTime, setServerTime] = useState(null);
 
       useEffect(() => {
-        const fetchVault = async () => {
+const fetchVault = async (showOffline = false) => {
           try {
             const response = await fetch(`${API_BASE}/${USER_ID}`);
+            if (!response.ok) throw new Error('Network error');
             const data = await response.json();
             setPasswords(data.passwords || []);
             setDailyFocus(data.dailyFocus || '');
           } catch (err) {
             console.error("❌ Backend sync error:", err);
+            if (showOffline) {
+              alert('Offline mode. Vault data from cache. Check connection.');
+            }
+            // Try localStorage fallback
+            const cached = localStorage.getItem('vaultCache');
+            if (cached) {
+              const data = JSON.parse(cached);
+              setPasswords(data.passwords || []);
+              setDailyFocus(data.dailyFocus || '');
+            }
           }
         };
         fetchVault();
@@ -196,7 +225,7 @@
         return { cat, quote };
       }, [currentTime.getDate()]);
 
-      const addPassword = async () => {
+const addPassword = async () => {
         if (!newPassword) return;
         setIsLoading(true);
         const payload = {
@@ -214,11 +243,16 @@
           if (response.ok) {
             const data = await response.json();
             setPasswords(data.passwords);
+            localStorage.setItem('vaultCache', JSON.stringify(data));
             setNewPassword('');
             setCustomDays('');
+            fetchVault();
+          } else {
+            throw new Error('Server error');
           }
         } catch (err) {
-          alert("Vault connection failed.");
+          alert("Offline. Data queued for sync.");
+          localStorage.setItem('pendingSeal', JSON.stringify(payload));
         } finally {
           setIsLoading(false);
         }
@@ -436,8 +470,34 @@
       );
     }
 
+    // PWA SW Registration
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW failed', err));
+    }
+
+    // Loading progress
+    let loadProgress = 0;
+    const bar = document.querySelector('.loading-bar div');
+    const interval = setInterval(() => {
+      loadProgress += Math.random() * 10;
+      if (loadProgress > 95) loadProgress = 95;
+      bar.style.width = loadProgress + '%';
+    }, 100);
+
+    // Splash fade out after deps + React render
+    const fadeSplash = () => {
+      clearInterval(interval);
+      bar.style.width = '100%';
+      setTimeout(() => {
+        document.getElementById('splash').style.opacity = '0';
+        document.getElementById('root').style.opacity = '1';
+        setTimeout(() => document.getElementById('splash').remove(), 500);
+      }, 300);
+    };
+
     const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />);
+    root.render(<App />); 
+    fadeSplash();  
   </script>
 
   <script>

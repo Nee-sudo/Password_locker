@@ -9,7 +9,21 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.use(express.static('public'));
+app.use(express.static('public', {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.json') || path === 'manifest.json' || path.endsWith('.js')) {
+      res.setHeader('Cache-Control', 'public, max-age=31536000');
+    }
+    if (path === 'manifest.json') {
+      res.setHeader('Content-Type', 'application/manifest+json');
+    }
+    if (path.endsWith('sw.js')) {
+      res.setHeader('Service-Worker-Allowed', '/');
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
+
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });

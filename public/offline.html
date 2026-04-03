@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vault - Offline</title>
+  <style>
+    body { 
+      margin: 0; 
+      height: 100vh; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      justify-content: center; 
+      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); 
+      color: #f1f5f9; 
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif; 
+      text-align: center; 
+      padding: 2rem;
+    }
+    .icon { width: 64px; height: 64px; margin-bottom: 1rem; opacity: 0.8; }
+    button { 
+      background: linear-gradient(45deg, #ff512f, #dd2476); 
+      color: white; 
+      border: none; 
+      padding: 12px 24px; 
+      border-radius: 50px; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.3s; 
+      margin-top: 1rem;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(221,36,118,0.4); }
+    .blink { animation: blink 2s infinite; }
+    @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.3; } }
+  </style>
+</head>
+<body>
+  <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+  </svg>
+  <h1>Connection Paused</h1>
+  <p>Your vault is secure, but needs internet to sync.</p>
+  <p class="blink">Vault data available from cache.</p>
+  <button onclick="location.reload()">Retry Connection</button>
+  <script>
+    // Check if online
+    window.addEventListener('online', () => location.reload());
+  </script>
+</body>
+</html>
