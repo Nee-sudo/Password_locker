@@ -28,7 +28,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
 app.get('/graph', (req, res) => {
-  res.sendFile(__dirname + '/Productivity/index.html');
+  res.sendFile(__dirname + '/public/Productivity/index.html');
 });
 // --- DATABASE SCHEMA ---
 const passwordEntrySchema = new mongoose.Schema({
