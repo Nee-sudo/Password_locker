@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#7b38f8">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="icon" href="https://img.icons8.com/?size=80&id=WzwD40yUyIpm&format=png" type="image/png">
+  <title>Productivity Dashboard | Vault</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+<style>
+  :root {
+    --bg-color: #0f172a;       /* Deep Navy Blue */
+    --card-bg: #1e293b;       /* Slate Blue */
+    --accent: #7b38f8;        /* Purple */
+    --text-main: #f8fafc;
+    --text-dim: #94a3b8;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    height: 100vh;
+    margin: 0;
+    padding: 20px 20px 120px 20px;
+    background: var(--bg-color);
+    color: var(--text-main);
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+
+  .header {
+    max-width: 100%;
+
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    background: var(--card-bg);
+    padding: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+
+    border-radius: 12px;
+    border: 1px solid #334155;
+  }
+
+  button {
+    padding: 10px 18px;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text-dim);
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 80px;
+
+    transition: all 0.2s ease;
+  }
+
+  button:hover {
+    color: var(--text-main);
+    background: #334155;
+  }
+
+  button.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .chart-wrapper {
+    height: 70vh;
+
+    width: 100%;
+    max-width: 1600px;
+    flex-grow: 1;
+    background: #f4f4f4; /* Matching the original "Inspirational" background */
+    border-radius: 20px;
+    padding: 25px;
+    margin: 10px 0;
+
+    border: 1px solid #334155;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    position: relative;
+    box-sizing: border-box;
+  }
+
+  canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  h1 {
+    font-size: clamp(1.5rem, 4vw, 2.5rem);
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+
+  @media (max-width: 768px) {
+    body {
+      padding: 10px;
+    }
+
+    .header {
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .controls {
+      gap: 8px;
+    }
+
+    .chart-wrapper {
+      padding: 15px;
+      border-radius: 16px;
+      max-width: 100%;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .controls {
+      padding: 10px;
+      gap: 4px;
+    }
+
+    button {
+      font-size: 14px;
+      padding: 10px 12px;
+    }
+
+    .chart-wrapper {
+      padding: 10px;
+      height: 65vh;
+    }
+  }
+
+  /* Bottom Navigation Styles */
+  .bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: var(--card-bg);
+    -webkit-backdrop-filter: blur(20px);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid #334155;
+    padding: 12px 20px;
+  }
+
+  .nav-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+
+  .nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    color: var(--text-dim);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .nav-btn:hover {
+    color: var(--text-main);
+    background: #334155;
+  }
+
+  .nav-btn.active {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .nav-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  .nav-label {
+    font-size: 10px;
+    display: none;
+  }
+
+  @media (min-width: 768px) {
+    .nav-label {
+      display: block;
+    }
+  }
+
+</style>
+
+</head>
+
+<body>
+  <!-- Splash Screen -->
+  <div id="splash" style="position:fixed;top:0;left:0;right:0;bottom:0;background:var(--bg-color);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--text-main);font-family:'Inter',sans-serif;text-align:center;padding:2rem;opacity:1;transition:opacity 0.5s ease-out;">
+    <div style="width:80px;height:80px;border:3px solid var(--accent, #7b38f8);border-top:3px solid var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:2rem;"></div>
+    <h2 style="font-size:1.5rem;font-weight:700;margin:0 0 1rem 0;">Productivity Graph</h2>
+    <div class="loading-bar" style="width:200px;height:4px;background:var(--card-bg);border-radius:2px;overflow:hidden;margin-bottom:1rem;">
+      <div style="height:100%;background:var(--accent);width:0%;transition:width 0.1s ease;border-radius:2px;"></div>
+    </div>
+    <p style="opacity:0.8;font-size:0.9rem;">Loading data...</p>
+  </div>
+
+  <div id="main-content" style="opacity:0;transition:opacity 0.3s ease-in;">
+
+<div class="header">
+  <h1>Productivity <span style="color: var(--accent)">Challenge</span></h1>
+  <div class="controls">
+    <button onclick="updateView('daily', this)">Daily</button>
+    <button onclick="updateView('weekly', this)">Weekly</button>
+    <button onclick="updateView('monthly', this)">Monthly</button>
+    <button onclick="updateView('yearly', this)">Yearly</button>
+    <button onclick="updateView('lifetime', this)" class="active">Lifetime</button>
+  </div>
+</div>
+
+<div class="chart-wrapper">
+  <canvas id="heartbeatChart"></canvas>
+</div>
+
+<script>
+const SHEET_URL = "https://docs.google.com/spreadsheets/d/1ocnFi7S8d2a_HEv-3qXASBY9lUFcCqV6I0Z5-BY3JMY/gviz/tq?tqx=out:csv";
+
+let fullData = {};
+let chart;
+let progress = 0;
+let animationFrameId;
+
+async function loadSheetData(){
+  const res = await fetch(SHEET_URL);
+  const text = await res.text();
+  const rows = text.trim().split("\n").slice(1);
+  const labels=[], work=[], completed=[], pending=[];
+
+  rows.forEach(row=>{
+    const cols = row.split(",").map(v => v.replace(/"/g,"").trim());
+    labels.push(cols[0]);
+    work.push(Number(cols[1]));
+    completed.push(Number(cols[2]));
+    pending.push(Number(cols[3]));
+  });
+  return {labels, work, completed, pending};
+}
+
+// Same reveal plugin from original code
+const revealPlugin = {
+  id:'reveal',
+  beforeDatasetDraw(chart,args){
+    const {ctx, chartArea:{left,right,top,bottom}} = chart;
+    const prog = chart._revealProgress || 0;
+    if(args.meta.type === "line"){
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, top, (right-left)*prog, bottom-top);
+      ctx.clip();
+    }
+  },
+  afterDatasetDraw(chart,args){
+    if(args.meta.type === "line"){
+      chart.ctx.restore();
+    }
+  }
+};
+
+function animate() {
+  progress += 0.002; // Matching speed closer to original
+  if (progress <= 1) {
+    chart._revealProgress = progress;
+    chart.update();
+    animationFrameId = requestAnimationFrame(animate);
+  }
+}
+
+function updateView(range, btn) {
+  document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+
+  let sliceCount;
+  switch(range) {
+    case 'daily': sliceCount = 2; break;
+    case 'weekly': sliceCount = 7; break;
+    case 'monthly': sliceCount = 30; break;
+    case 'yearly': sliceCount = 365; break;
+    default: sliceCount = fullData.labels.length;
+  }
+
+  chart.data.labels = fullData.labels.slice(-sliceCount);
+  chart.data.datasets[0].data = fullData.work.slice(-sliceCount);
+  chart.data.datasets[1].data = fullData.completed.slice(-sliceCount);
+  chart.data.datasets[2].data = fullData.pending.slice(-sliceCount);
+
+  // Reset animation
+  cancelAnimationFrame(animationFrameId);
+  progress = 0;
+  animate();
+}
+
+loadSheetData().then(data => {
+  fullData = data;
+  const ctx = document.getElementById("heartbeatChart").getContext("2d");
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: data.labels,
+      datasets: [
+        {
+          label: "Number of Work",
+          data: data.work,
+          borderColor: "#FF5733", // Original Red-Orange
+          backgroundColor: "#FF5733",
+          fill: false,
+          tension: 0.3,
+          pointRadius: 5
+        },
+        {
+          label: "Completed",
+          data: data.completed,
+          borderColor: "#33FF57", // Original Green
+          backgroundColor: "#33FF57",
+          fill: false,
+          tension: 0.3,
+          pointRadius: 5
+        },
+        {
+          label: "Pending",
+          data: data.pending,
+          borderColor: "#3357FF", // Original Blue
+          backgroundColor: "#3357FF",
+          fill: false,
+          tension: 0.3,
+          pointRadius: 5
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: false,
+      layout: {
+        padding: {left: 20, right: 20, top: 10, bottom: 10}
+      },
+      plugins: {
+        legend: { position: "top" },
+        title: {
+          display: true,
+          text: "2025 Productivity Challenge",
+          font: { size: 18 }
+        }
+      },
+      scales: {
+        x: { title: { display: true, text: "Date" } },
+        y: {
+          title: { display: true, text: "Task Count" },
+          beginAtZero: true,
+          ticks: { stepSize: 1 }
+        }
+      }
+    },
+    plugins: [revealPlugin]
+  });
+
+  animate();
+});
+
+// PWA SW Registration
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').then(reg => console.log('Graph SW registered')).catch(err => console.log('SW failed', err));
+}
+
+// Loading progress for splash
+let loadProgress = 0;
+const bar = document.querySelector('.loading-bar div');
+const interval = setInterval(() => {
+  loadProgress += Math.random() * 15;
+  if (loadProgress > 90) loadProgress = 90;
+  bar.style.width = loadProgress + '%';
+}, 80);
+
+// Fade splash after Chart.js + data load
+async function fadeSplash() {
+  clearInterval(interval);
+  bar.style.width = '100%';
+  setTimeout(() => {
+    document.getElementById('splash').style.opacity = '0';
+    document.getElementById('main-content').style.opacity = '1';
+    setTimeout(() => document.getElementById('splash').remove(), 500);
+  }, 400);
+}
+
+// Call after data/chart ready
+loadSheetData().then(data => {
+  // ... existing chart code ...
+  fadeSplash(); // Add this line after animate()
+});
+
+// Bottom Nav Active State
+document.addEventListener('DOMContentLoaded', () => {
+  const path = window.location.pathname;
+  const vaultBtn = document.querySelector('a[href="/"]');
+  const graphBtn = document.querySelector('a[href="/graph"]');
+  if (path === '/') {
+    vaultBtn?.classList.add('active');
+  } else if (path === '/graph') {
+    graphBtn?.classList.add('active');
+  }
+});
+</script>
+
+<style>
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <div class="nav-container">
+    <a href="/" class="nav-btn">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+      <span class="nav-label">Vault</span>
+    </a>
+    <a href="/graph" class="nav-btn">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 3v18h18V3H3z"/>
+        <path d="M12 9v8"/>
+        <path d="M9 11v6"/>
+        <path d="M15 7v10"/>
+      </svg>
+      <span class="nav-label">Graph</span>
+    </a>
+  </div>
+</nav>
+
+</body>
+</html>
