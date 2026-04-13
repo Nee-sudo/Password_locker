@@ -242,57 +242,44 @@
 <div class="chart-wrapper">
   <canvas id="heartbeatChart"></canvas>
 </div>
-
 <script>
-const SHEET_URL = "https://docs.google.com/spreadsheets/d/1ocnFi7S8d2a_HEv-3qXASBY9lUFcCqV6I0Z5-BY3JMY/gviz/tq?tqx=out:csv";
+const USER_ID = "elite_protocol_user_1";
+const API_URL = location.hostname === "localhost"
+  ? "http://localhost:5000"
+  : "https://passwordlocker-vpq0.onrender.com";
 
-let fullData = {};
 let chart;
-let progress = 0;
-let animationFrameId;
+let fullData = { labels: [], score: [] };
 
-async function loadSheetData(){
-  const res = await fetch(SHEET_URL);
-  const text = await res.text();
-  const rows = text.trim().split("\n").slice(1);
-  const labels=[], work=[], completed=[], pending=[];
+// ✅ Safe fetch
+async function loadData() {
+  try {
+    const res = await fetch(`${API_URL}/api/vault/${USER_ID}`);
+    const data = await res.json();
 
-  rows.forEach(row=>{
-    const cols = row.split(",").map(v => v.replace(/"/g,"").trim());
-    labels.push(cols[0]);
-    work.push(Number(cols[1]));
-    completed.push(Number(cols[2]));
-    pending.push(Number(cols[3]));
-  });
-  return {labels, work, completed, pending};
-}
+    let labels = [];
+    let score = [];
+    let runningScore = 0;
 
-// Same reveal plugin from original code
-const revealPlugin = {
-  id:'reveal',
-  beforeDatasetDraw(chart,args){
-    const {ctx, chartArea:{left,right,top,bottom}} = chart;
-    const prog = chart._revealProgress || 0;
-    if(args.meta.type === "line"){
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(left, top, (right-left)*prog, bottom-top);
-      ctx.clip();
-    }
-  },
-  afterDatasetDraw(chart,args){
-    if(args.meta.type === "line"){
-      chart.ctx.restore();
-    }
-  }
-};
+    (data.passwords || []).forEach((entry) => {
+      (entry.attempts || []).forEach((attempt) => {
 
-function animate() {
-  progress += 0.002; // Matching speed closer to original
-  if (progress <= 1) {
-    chart._revealProgress = progress;
-    chart.update();
-    animationFrameId = requestAnimationFrame(animate);
+        // ✅ Cleaner time format
+        const date = new Date(attempt.time);
+        const time = date.getHours() + ":" + String(date.getMinutes()).padStart(2, "0");
+
+        runningScore += attempt.success ? 1 : -1;
+
+        labels.push(time);
+        score.push(runningScore);
+      });
+    });
+
+    return { labels, score };
+
+  } catch (err) {
+    console.error("Graph load failed:", err);
+    return { labels: ["No Data"], score: [0] };
   }
 }
 
@@ -302,136 +289,74 @@ function updateView(range, btn) {
 
   let sliceCount;
   switch(range) {
-    case 'daily': sliceCount = 2; break;
-    case 'weekly': sliceCount = 7; break;
-    case 'monthly': sliceCount = 30; break;
-    case 'yearly': sliceCount = 365; break;
+    case 'daily': sliceCount = 10; break;
+    case 'weekly': sliceCount = 50; break;
+    case 'monthly': sliceCount = 100; break;
     default: sliceCount = fullData.labels.length;
   }
 
   chart.data.labels = fullData.labels.slice(-sliceCount);
-  chart.data.datasets[0].data = fullData.work.slice(-sliceCount);
-  chart.data.datasets[1].data = fullData.completed.slice(-sliceCount);
-  chart.data.datasets[2].data = fullData.pending.slice(-sliceCount);
-
-  // Reset animation
-  cancelAnimationFrame(animationFrameId);
-  progress = 0;
-  animate();
+  chart.data.datasets[0].data = fullData.score.slice(-sliceCount);
+  chart.update();
 }
 
-loadSheetData().then(data => {
+// ✅ Splash handler (FIXED)
+function fadeSplash() {
+  const splash = document.getElementById("splash");
+  const main = document.getElementById("main-content");
+
+  splash.style.opacity = "0";
+  main.style.opacity = "1";
+
+  setTimeout(() => splash.remove(), 500);
+}
+
+// 🔥 Chart init
+loadData().then(data => {
   fullData = data;
+
   const ctx = document.getElementById("heartbeatChart").getContext("2d");
 
   chart = new Chart(ctx, {
     type: "line",
     data: {
-      labels: data.labels,
-      datasets: [
-        {
-          label: "Number of Work",
-          data: data.work,
-          borderColor: "#FF5733", // Original Red-Orange
-          backgroundColor: "#FF5733",
-          fill: false,
-          tension: 0.3,
-          pointRadius: 5
-        },
-        {
-          label: "Completed",
-          data: data.completed,
-          borderColor: "#33FF57", // Original Green
-          backgroundColor: "#33FF57",
-          fill: false,
-          tension: 0.3,
-          pointRadius: 5
-        },
-        {
-          label: "Pending",
-          data: data.pending,
-          borderColor: "#3357FF", // Original Blue
-          backgroundColor: "#3357FF",
-          fill: false,
-          tension: 0.3,
-          pointRadius: 5
-        }
-      ]
+      labels: data.labels.length ? data.labels : ["Start"],
+      datasets: [{
+        label: "Discipline Score",
+        data: data.score.length ? data.score : [0],
+        borderColor: "#7b38f8",
+        backgroundColor: "#7b38f8",
+        fill: false,
+        tension: 0.3,
+        pointRadius: 4
+      }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: false,
-      layout: {
-        padding: {left: 20, right: 20, top: 10, bottom: 10}
-      },
       plugins: {
-        legend: { position: "top" },
+        legend: { display: true },
         title: {
           display: true,
-          text: "2025 Productivity Challenge",
+          text: "Discipline Performance",
           font: { size: 18 }
         }
       },
       scales: {
-        x: { title: { display: true, text: "Date" } },
+        x: {
+          title: { display: true, text: "Attempts (Time)" }
+        },
         y: {
-          title: { display: true, text: "Task Count" },
-          beginAtZero: true,
-          ticks: { stepSize: 1 }
+          title: { display: true, text: "Score" },
+          beginAtZero: true
         }
       }
-    },
-    plugins: [revealPlugin]
+    }
   });
 
-  animate();
-});
-
-// PWA SW Registration
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('/sw.js').then(reg => console.log('Graph SW registered')).catch(err => console.log('SW failed', err));
-}
-
-// Loading progress for splash
-let loadProgress = 0;
-const bar = document.querySelector('.loading-bar div');
-const interval = setInterval(() => {
-  loadProgress += Math.random() * 15;
-  if (loadProgress > 90) loadProgress = 90;
-  bar.style.width = loadProgress + '%';
-}, 80);
-
-// Fade splash after Chart.js + data load
-async function fadeSplash() {
-  clearInterval(interval);
-  bar.style.width = '100%';
-  setTimeout(() => {
-    document.getElementById('splash').style.opacity = '0';
-    document.getElementById('main-content').style.opacity = '1';
-    setTimeout(() => document.getElementById('splash').remove(), 500);
-  }, 400);
-}
-
-// Call after data/chart ready
-loadSheetData().then(data => {
-  // ... existing chart code ...
-  fadeSplash(); // Add this line after animate()
-});
-
-// Bottom Nav Active State
-document.addEventListener('DOMContentLoaded', () => {
-  const path = window.location.pathname;
-  const vaultBtn = document.querySelector('a[href="/"]');
-  const graphBtn = document.querySelector('a[href="/graph"]');
-  if (path === '/') {
-    vaultBtn?.classList.add('active');
-  } else if (path === '/graph') {
-    graphBtn?.classList.add('active');
-  }
+  fadeSplash();
 });
 </script>
-
 <style>
 @keyframes spin { to { transform: rotate(360deg); } }
 </style>

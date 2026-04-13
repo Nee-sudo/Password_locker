@@ -234,6 +234,26 @@
     </style>
 
     <script type="text/babel">
+      const attemptUnlock = async (pass, index) => {
+  try {
+    const res = await fetch(`${API_BASE}/${USER_ID}/attempt/${index}`, {
+      method: "POST",
+    });
+
+    const data = await res.json();
+
+    if (data.success) {
+      alert("✅ Access Granted");
+      return atob(data.encrypted);
+    } else {
+      alert(`❌ Blocked | Penalty: ${data.penalty}`);
+      return null;
+    }
+  } catch (err) {
+    alert("Server error");
+    return null;
+  }
+};
       const { useState, useEffect, useMemo } = React;
 
       const USER_ID = "elite_protocol_user_1";
@@ -376,6 +396,7 @@
         const [selectedPass, setSelectedPass] = useState(null);
         const [isLoading, setIsLoading] = useState(false);
         const [serverTime, setServerTime] = useState(null);
+        const [decrypted, setDecrypted] = useState(null);
 
         useEffect(() => {
           const fetchVault = async (showOffline = false) => {
@@ -401,6 +422,19 @@
           };
           fetchVault();
         }, []);
+
+        useEffect(() => {
+          const run = async () => {
+            if (selectedPass) {
+              const result = await attemptUnlock(selectedPass, selectedPass.index);
+              if (result) {
+                setDecrypted(result);
+                selectedPass.unlocked = true;
+              }
+            }
+          };
+          run();
+        }, [selectedPass]);
 
         useEffect(() => {
           const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -653,7 +687,7 @@
                     </span>
                   </div>
                   <div className="grid gap-4">
-                    {passwords.map((pass) => (
+                    {passwords.map((pass, index) => (
                       <div
                         key={pass._id || pass.id}
                         className="glass p-6 md:p-8 rounded-[2rem] flex flex-col sm:row justify-between items-center gap-4 sm:flex-row group hover:bg-white/[0.05] transition-all"
@@ -671,7 +705,7 @@
                           </p>
                         </div>
                         <button
-                          onClick={() => setSelectedPass(pass)}
+                          onClick={() => setSelectedPass({ ...pass, index })}
                           className="w-full sm:w-auto bg-white/5 hover:bg-white/10 px-8 md:px-12 py-3 md:py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 group-hover:border-pink-500/50"
                         >
                           Unlock
@@ -688,17 +722,16 @@
                   </div>
                 </section>
               </div>
-            </div>
+</div>
 
-            {/* Intervention / Unlock Modal */}
-            {selectedPass && (
+{selectedPass && (
               <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
                 <div
                   className="absolute inset-0 bg-black/95 backdrop-blur-xl"
                   onClick={() => setSelectedPass(null)}
                 ></div>
                 <div className="relative glass p-8 md:p-16 rounded-[2.5rem] md:rounded-[3rem] max-w-2xl w-full text-center fade-in border border-white/10 max-h-[90vh] overflow-y-auto">
-                  {isExpired(selectedPass) || checkTimeAccess(selectedPass) ? (
+                  {selectedPass.unlocked ? (
                     <div className="space-y-6 md:space-y-8">
                       <div className="inline-block p-4 rounded-full bg-green-500/10">
                         <svg
@@ -720,14 +753,12 @@
                       </h2>
                       <div className="bg-black/50 p-6 md:p-10 rounded-[2rem] border border-white/10 break-all">
                         <code className="text-2xl md:text-4xl font-mono text-white select-all">
-                          {atob(selectedPass.encrypted)}
+                          {decrypted}
                         </code>
                       </div>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(
-                            atob(selectedPass.encrypted),
-                          );
+                          navigator.clipboard.writeText(decrypted);
                           alert("Credential Copied.");
                         }}
                         className="gradient-btn w-full py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm"

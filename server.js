@@ -27,18 +27,38 @@ app.use(express.static('public', {
 app.get('/', (req, res) => {
   res.sendFile(__dirname + '/public/index.html');
 });
+
 app.get('/graph', (req, res) => {
   res.sendFile(__dirname + '/public/graph.html');
 });
-// --- DATABASE SCHEMA ---
+
+
+// --- DATABASE SCHEMA (UPDATED) ---
 const passwordEntrySchema = new mongoose.Schema({
   encrypted: { type: String, required: true },
+
   lockDate: { type: Date, default: Date.now },
+
   endDate: { type: Date, required: true },
+
+  // 🔥 REAL TIME WINDOW (HH:MM format from frontend)
   window: {
-    start: { type: String, default: "20:00" },
-    end: { type: String, default: "21:00" }
-  }
+    start: { type: String, required: true }, // e.g. "10:04"
+    end: { type: String, required: true }    // e.g. "10:05"
+  },
+
+  // 🔥 NEW: discipline tracking
+  attempts: [
+    {
+      time: { type: Date, default: Date.now },
+      success: Boolean
+    }
+  ],
+
+  score: { type: Number, default: 0 },
+  streak: { type: Number, default: 0 },
+  penalty: { type: Number, default: 0 }
+
 });
 
 const vaultSchema = new mongoose.Schema({
@@ -49,12 +69,14 @@ const vaultSchema = new mongoose.Schema({
 
 const Vault = mongoose.model('Vault', vaultSchema);
 
+
 // --- MONGODB CONNECTION ---
 const MONGO_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/vault_db';
 
 mongoose.connect(MONGO_URI)
-  .then(() => console.log('✅ [DATABASE]: Connection Established. Vault Protocol Online.'))
-  .catch(err => console.error('❌ [DATABASE]: Critical Connection Error:', err));
+  .then(() => console.log('✅ [DATABASE]: Connected'))
+  .catch(err => console.error('❌ DB Error:', err));
+
 
 // --- API ROUTES ---
 
@@ -62,35 +84,32 @@ mongoose.connect(MONGO_URI)
 app.get('/api/vault/:userId', async (req, res) => {
   try {
     const vault = await Vault.findOne({ userId: req.params.userId });
-    // If no vault exists yet, return an empty template
     if (!vault) {
       return res.json({ passwords: [], dailyFocus: '' });
     }
     res.json(vault);
   } catch (err) {
-    res.status(500).json({ error: "Failed to retrieve vault data." });
+    res.status(500).json({ error: "Fetch failed" });
   }
 });
 
-// 2. Add New Password (The "Seal" Protocol)
+
+// 2. Add Password (UPDATED)
 app.post('/api/vault/:userId/add', async (req, res) => {
   try {
     const { encrypted, days, window } = req.body;
 
-    // Calculate expiry on the server for security
     const expiry = new Date();
     expiry.setDate(expiry.getDate() + parseInt(days));
-
-    console.log(`\n🔐 [LOG]: INCOMING SEAL REQUEST`);
-    console.log(`👤 User: ${req.params.userId}`);
-    console.log(`⏳ Locking for: ${days} days (Expires: ${expiry.toLocaleDateString()})`);
-    console.log(`🕒 Window: ${window.start} - ${window.end}`);
-    console.log(`-------------------------------------------`);
 
     const newEntry = {
       encrypted,
       endDate: expiry,
-      window
+      window,
+      attempts: [],
+      score: 0,
+      streak: 0,
+      penalty: 0
     };
 
     const vault = await Vault.findOneAndUpdate(
@@ -99,15 +118,79 @@ app.post('/api/vault/:userId/add', async (req, res) => {
       { upsert: true, new: true }
     );
 
-    console.log(`✅ [DATABASE]: Password successfully stored in DB.`);
     res.json(vault);
   } catch (err) {
-    console.error('❌ [ERROR]: Storage failed:', err.message);
-    res.status(500).json({ error: "Protocol failed to seal data." });
+    res.status(500).json({ error: "Add failed" });
   }
 });
 
-// 3. Update Daily Focus
+
+// 🔥 3. TRY ACCESS (NEW CORE FEATURE)
+app.post('/api/vault/:userId/attempt/:index', async (req, res) => {
+  try {
+    const vault = await Vault.findOne({ userId: req.params.userId });
+    if (!vault) return res.status(404).json({ error: "Vault not found" });
+
+    const entry = vault.passwords[req.params.index];
+    if (!entry) return res.status(404).json({ error: "Entry not found" });
+
+    const now = new Date();
+
+    // Convert HH:MM → today Date
+    const [sh, sm] = entry.window.start.split(':');
+    const [eh, em] = entry.window.end.split(':');
+
+    const startTime = new Date(now);
+    startTime.setHours(sh, sm, 0);
+
+    const endTime = new Date(now);
+    endTime.setHours(eh, em, 0);
+
+    let success = false;
+
+    if (now >= startTime && now <= endTime) {
+      success = true;
+      entry.score += 1;
+      entry.streak += 1;
+    } else {
+      success = false;
+      entry.score -= 1;
+      entry.streak = 0;
+      entry.penalty += 1;
+
+      // 🔥 shift window forward (penalty system)
+      startTime.setMinutes(startTime.getMinutes() + entry.penalty);
+      endTime.setMinutes(endTime.getMinutes() + entry.penalty);
+
+      entry.window.start = `${startTime.getHours().toString().padStart(2,'0')}:${startTime.getMinutes().toString().padStart(2,'0')}`;
+      entry.window.end = `${endTime.getHours().toString().padStart(2,'0')}:${endTime.getMinutes().toString().padStart(2,'0')}`;
+    }
+
+    // Save attempt
+    entry.attempts.push({
+      time: now,
+      success
+    });
+
+    await vault.save();
+
+    res.json({
+      success,
+      score: entry.score,
+      streak: entry.streak,
+      penalty: entry.penalty,
+      window: entry.window,
+      encrypted: success ? entry.encrypted : null
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Attempt failed" });
+  }
+});
+
+
+// 4. Update Daily Focus
 app.patch('/api/vault/:userId/focus', async (req, res) => {
   try {
     const { dailyFocus } = req.body;
@@ -122,19 +205,15 @@ app.patch('/api/vault/:userId/focus', async (req, res) => {
   }
 });
 
-// 4. Server Time Endpoint (Fixes worldtimeapi errors)
+
+// 5. Server Time
 app.get('/api/time', (req, res) => {
   res.json({ datetime: new Date().toISOString() });
 });
 
-// --- SERVER INITIALIZATION ---
+
+// --- SERVER START ---
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`
-  🚀 ELITE VAULT PROTOCOL ACTIVE
-  ------------------------------
-  Port: ${PORT}
-  Status: Listening for Encrypted Payloads
-  ------------------------------
-  `);
+  console.log(`🚀 Server running on port ${PORT}`);
 });
