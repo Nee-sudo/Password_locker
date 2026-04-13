@@ -1,541 +1,868 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#ec4899">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-touch-fullscreen" content="yes">
-  <link rel="manifest" href="/manifest.json">
-  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-  <title>Digital Commitment Vault | Elite Protocol</title>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-    
-    body { 
-      background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%); 
-      color: #f1f5f9; 
-      font-family: 'Inter', sans-serif; 
-      min-height: 100vh;
-      padding-bottom: 5rem;
-      overflow-x: hidden;
-    }
-    
-    .glass { 
-      background: rgba(255, 255, 255, 0.03); 
-      -webkit-backdrop-filter: blur(20px);
-      backdrop-filter: blur(20px); 
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-    }
-    
-    .gradient-btn { 
-      background: linear-gradient(45deg, #ff512f, #dd2476); 
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    .gradient-btn:hover { 
-      transform: translateY(-2px); 
-      box-shadow: 0 10px 25px rgba(221, 36, 118, 0.4);
-      filter: brightness(1.1);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#ec4899" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <title>Digital Commitment Vault | Elite Protocol</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 
-    .fade-in { animation: fadeIn 0.6s ease-out; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-    /* Bottom Navigation */
-    #bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      z-index: 50;
-      background: rgba(255, 255, 255, 0.05);
-      -webkit-backdrop-filter: blur(20px);
-      backdrop-filter: blur(20px);
-      border-top: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 12px 16px;
-    }
-
-    .nav-container {
-      max-width: 6xl;
-      margin: 0 auto;
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-    }
-
-    .nav-btn {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      color: rgba(255, 255, 255, 0.5);
-      text-decoration: none;
-      transition: all 0.3s ease;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .nav-btn:hover {
-      color: #f1f5f9;
-      background: rgba(255, 255, 255, 0.1);
-    }
-
-    .nav-btn.active {
-      color: #ec4899;
-      background: rgba(255, 255, 255, 0.15);
-      font-weight: 600;
-    }
-
-    .nav-btn.graph-active {
-      color: #7b38f8;
-      background: rgba(255, 255, 255, 0.15);
-      font-weight: 600;
-    }
-
-    .nav-icon {
-      width: 24px;
-      height: 24px;
-    }
-
-    .nav-label {
-      font-size: 10px;
-      display: none;
-    }
-
-    @media (min-width: 768px) {
-      .nav-label {
-        display: block;
+      body {
+        background: linear-gradient(
+          135deg,
+          #0f0c29 0%,
+          #302b63 50%,
+          #24243e 100%
+        );
+        color: #f1f5f9;
+        font-family: "Inter", sans-serif;
+        min-height: 100vh;
+        padding-bottom: 5rem;
+        overflow-x: hidden;
       }
-    }
 
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
-    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-    
-    /* Responsive Time Input Fix */
-    input[type="time"]::-webkit-calendar-picker-indicator {
-      filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(328deg) brightness(118%) contrast(119%);
-    }
-  </style>
-</head>
-<body>
-  <!-- Splash Screen -->
-  <div id="splash" style="position:fixed;top:0;left:0;right:0;bottom:0;background:linear-gradient(135deg,#0f0c29 0%,#302b63 50%,#24243e 100%);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f1f5f9;font-family:'Inter',sans-serif;text-align:center;padding:2rem;opacity:1;transition:opacity 0.5s ease-out;">
-    <div style="width:80px;height:80px;border:3px solid rgba(236,72,153,0.3);border-top:3px solid #ec4899;border-radius:50%;animation:spin 1s linear infinite;margin-bottom:2rem;"></div>
-    <h2 style="font-size:1.5rem;font-weight:700;margin:0 0 1rem 0;">Digital Commitment Vault</h2>
-    <div class="loading-bar" style="width:200px;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;overflow:hidden;margin-bottom:1rem;">
-      <div style="height:100%;background:linear-gradient(90deg,#ec4899,#ff512f);width:0%;transition:width 0.1s ease;border-radius:2px;"></div>
-    </div>
-    <p style="opacity:0.8;font-size:0.9rem;">Loading protocol...</p>
-  </div>
-  <div id="root" style="opacity:0;transition:opacity 0.3s ease-in;"></div>
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+      }
 
-  <style>
-    @keyframes spin { to { transform:rotate(360deg); } }
-  </style>
+      .gradient-btn {
+        background: linear-gradient(45deg, #ff512f, #dd2476);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
 
-  <script type="text/babel">
-    const { useState, useEffect, useMemo } = React;
+      .gradient-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(221, 36, 118, 0.4);
+        filter: brightness(1.1);
+      }
 
-    const USER_ID = "elite_protocol_user_1"; 
-    const isDev = location.hostname === 'localhost';
-    const API_URL = isDev ? "http://localhost:5000" : "https://passwordlocker.onrender.com";
-    const API_BASE = `${API_URL}/api/vault`;
-
-    const REASONS = {
-      Growth: ["You cannot sprout in the same soil that withered you.", "Growth happens when you step beyond your comfort zone.", "Every ending is a new beginning in disguise.", "The pain of discipline is temporary; regret is forever.", "Transform your wounds into wisdom.", "You are the architect of your own transformation.", "Shed the old to make room for the new.", "Strength grows in the moments when you think you can't go on.", "Your potential is endless; stop limiting yourself.", "Bloom where you are planted, then choose better soil.", "The caterpillar thought the world was over; it was just a butterfly.", "Change is the law of life; adapt or perish.", "You don't drown by falling in water; you drown by staying there.", "The seed that falls in fertile ground grows tallest.", "Evolution demands sacrifice; let go to level up.", "Your future self is cheering for today's choices.", "Pain is the price of progress.", "Rebirth requires breaking the shell.", "Great things never come from comfort zones.", "Upgrade your soil; watch yourself flourish.", "The storm makes the oak strong."],
-      Energy: ["Your focus is your currency; stop spending it on a closed chapter.", "Energy flows where attention goes.", "Guard your energy like your most precious asset.", "Low energy decisions lead to low energy outcomes.", "Redirect your power to what fuels you.", "Don't leak energy to yesterday's drama.", "Your time is your life; invest it wisely.", "Fatigue is the enemy of excellence.", "Channel your fire into creation, not consumption.", "Every 'yes' to distraction is a 'no' to destiny.", "Preserve your spark for what ignites you.", "Energy vampires drain; boundaries recharge.", "Momentum builds with consistent small wins.", "Rest is productive; burnout is not.", "Your vitality is your superpower.", "Stop pouring from an empty cup.", "High energy attracts high opportunities.", "Routine shapes your rhythm.", "Silence recharges what noise depletes.", "What you tolerate today, you accept tomorrow.", "Energy audit: cut what costs more than it gives."],
-      Possibility: ["There are people you haven't met yet who will love you better.", "Doors you can't imagine are waiting to open.", "Your next chapter is your best yet.", "Opportunities multiply when you move forward.", "The universe rewards the bold.", "Better is coming; trust the process.", "Paths untaken hold your greatest adventures.", "Someone extraordinary is waiting for your healed heart.", "Your breakthrough is closer than your breakdown.", "New horizons call; answer them.", "Limiting beliefs block infinite potential.", "The right connections arrive at the right time.", "Serendipity favors the prepared mind.", "Your story isn't over; it's just beginning.", "Unknown blessings await your next step.", "What if the best hasn't arrived yet?", "Open hands receive more than closed fists.", "The future you want is being built now.", "Magic happens outside familiarity.", "Your tribe is searching for you too.", "Possibility lives in 'what if.'"],
-      SelfRespect: ["Choosing yourself is never a loss.", "You set the standard for how others treat you.", "Self-love is not selfish; it's survival.", "Your worth isn't negotiable.", "Walk away from what disrespects your soul.", "Healthy boundaries = healthy self-esteem.", "You deserve spaces that make you bloom.", "Never beg for a seat at someone else's table.", "Your peace is non-negotiable.", "Standards aren't walls; they're filters.", "Love yourself enough to say no.", "Your time has value; protect it.", "Self-respect attracts mutual respect.", "Compromise erodes character.", "You can't pour from an empty vessel.", "Dignity leaves no room for desperation.", "Value yourself; the world follows.", "No is a complete sentence.", "Your growth demands better environments.", "Self-betrayal hurts more than rejection.", "Rise to your own expectations."],
-      "Future Focus": ["The version of you three months from now is counting on your discipline today.", "Delayed gratification builds empires.", "Future you thanks present you.", "Small sacrifices yield massive rewards.", "Vision pulls stronger than temptation pushes.", "Compound your choices daily.", "Your tomorrow mirrors today's habits.", "Invest in legacy, not instant.", "Discipline is future freedom.", "Plant seeds today for tomorrow's harvest.", "The long game wins.", "Patience compounds like interest.", "Future wealth starts with present restraint.", "One year from now, you'll wish you started today.", "Sacrifices today = stories tomorrow.", "Vision > vibration.", "Delayed pleasure = permanent gain.", "Your future self is watching.", "Consistency over intensity.", "Build the life you preach.", "Time invested never returns wasted."]
-    };
-
-    function App() {
-      const [passwords, setPasswords] = useState([]);
-      const [newPassword, setNewPassword] = useState('');
-      const [startTime, setStartTime] = useState('20:00');
-      const [endTime, setEndTime] = useState('21:00');
-      const [lockDays, setLockDays] = useState('90');
-      const [customDays, setCustomDays] = useState('');
-      const [dailyFocus, setDailyFocus] = useState('');
-      const [masterLockStart, setMasterLockStart] = useState(() => localStorage.getItem('master_lock'));
-      const [currentTime, setCurrentTime] = useState(new Date());
-      const [selectedPass, setSelectedPass] = useState(null);
-      const [isLoading, setIsLoading] = useState(false);
-      const [serverTime, setServerTime] = useState(null);
-
-      useEffect(() => {
-const fetchVault = async (showOffline = false) => {
-          try {
-            const response = await fetch(`${API_BASE}/${USER_ID}`);
-            if (!response.ok) throw new Error('Network error');
-            const data = await response.json();
-            setPasswords(data.passwords || []);
-            setDailyFocus(data.dailyFocus || '');
-          } catch (err) {
-            console.error("❌ Backend sync error:", err);
-            if (showOffline) {
-              alert('Offline mode. Vault data from cache. Check connection.');
-            }
-            // Try localStorage fallback
-            const cached = localStorage.getItem('vaultCache');
-            if (cached) {
-              const data = JSON.parse(cached);
-              setPasswords(data.passwords || []);
-              setDailyFocus(data.dailyFocus || '');
-            }
-          }
-        };
-        fetchVault();
-      }, []);
-
-      useEffect(() => {
-        const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-        return () => clearInterval(timer);
-      }, []);
-
-      // Server time cache - fetches once on load, retries every 5min
-      useEffect(() => {
-        const fetchServerTime = async () => {
-          try {
-            const response = await fetch(`${API_URL}/api/time`);
-            const data = await response.json();
-            setServerTime(new Date(data.datetime));
-          } catch (err) {
-            // Silent fail - no console spam
-          }
-        };
-        fetchServerTime();
-        const interval = setInterval(fetchServerTime, 300000); // 5min
-        return () => clearInterval(interval);
-      }, []);
-
-      const dailyReason = useMemo(() => {
-        const day = currentTime.getDate();
-        const cats = Object.keys(REASONS);
-        const cat = cats[day % cats.length];
-        const quote = REASONS[cat][(day * 13) % REASONS[cat].length];
-        return { cat, quote };
-      }, [currentTime.getDate()]);
-
-const addPassword = async () => {
-        if (!newPassword) return;
-        setIsLoading(true);
-        const payload = {
-          encrypted: btoa(newPassword),
-          days: customDays ? parseInt(customDays) : parseInt(lockDays),
-          window: { start: startTime, end: endTime }
-        };
-
-        try {
-          const response = await fetch(`${API_BASE}/${USER_ID}/add`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          if (response.ok) {
-            const data = await response.json();
-            setPasswords(data.passwords);
-            localStorage.setItem('vaultCache', JSON.stringify(data));
-            setNewPassword('');
-            setCustomDays('');
-            fetchVault();
-          } else {
-            throw new Error('Server error');
-          }
-        } catch (err) {
-          alert("Offline. Data queued for sync.");
-          localStorage.setItem('pendingSeal', JSON.stringify(payload));
-        } finally {
-          setIsLoading(false);
+      .fade-in {
+        animation: fadeIn 0.6s ease-out;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
         }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Bottom Navigation */
+      #bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.05);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 16px;
+      }
+
+      .nav-container {
+        max-width: 6xl;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+
+      .nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .nav-btn:hover {
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .nav-btn.active {
+        color: #ec4899;
+        background: rgba(255, 255, 255, 0.15);
+        font-weight: 600;
+      }
+
+      .nav-btn.graph-active {
+        color: #7b38f8;
+        background: rgba(255, 255, 255, 0.15);
+        font-weight: 600;
+      }
+
+      .nav-icon {
+        width: 24px;
+        height: 24px;
+      }
+
+      .nav-label {
+        font-size: 10px;
+        display: none;
+      }
+
+      @media (min-width: 768px) {
+        .nav-label {
+          display: block;
+        }
+      }
+
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.2);
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+      }
+
+      /* Responsive Time Input Fix */
+      input[type="time"]::-webkit-calendar-picker-indicator {
+        filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(328deg)
+          brightness(118%) contrast(119%);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Splash Screen -->
+    <div
+      id="splash"
+      style="
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          #0f0c29 0%,
+          #302b63 50%,
+          #24243e 100%
+        );
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #f1f5f9;
+        font-family: &quot;Inter&quot;, sans-serif;
+        text-align: center;
+        padding: 2rem;
+        opacity: 1;
+        transition: opacity 0.5s ease-out;
+      "
+    >
+      <div
+        style="
+          width: 80px;
+          height: 80px;
+          border: 3px solid rgba(236, 72, 153, 0.3);
+          border-top: 3px solid #ec4899;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 2rem;
+        "
+      ></div>
+      <h2 style="font-size: 1.5rem; font-weight: 700; margin: 0 0 1rem 0">
+        Digital Commitment Vault
+      </h2>
+      <div
+        class="loading-bar"
+        style="
+          width: 200px;
+          height: 4px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 2px;
+          overflow: hidden;
+          margin-bottom: 1rem;
+        "
+      >
+        <div
+          style="
+            height: 100%;
+            background: linear-gradient(90deg, #ec4899, #ff512f);
+            width: 0%;
+            transition: width 0.1s ease;
+            border-radius: 2px;
+          "
+        ></div>
+      </div>
+      <p style="opacity: 0.8; font-size: 0.9rem">Loading protocol...</p>
+    </div>
+    <div id="root" style="opacity: 0; transition: opacity 0.3s ease-in"></div>
+
+    <style>
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+
+    <script type="text/babel">
+      const { useState, useEffect, useMemo } = React;
+
+      const USER_ID = "elite_protocol_user_1";
+      const isDev = location.hostname === "localhost";
+      const API_URL = isDev
+        ? "http://localhost:5000"
+        : "https://passwordlocker-vpq0.onrender.com";
+      const API_BASE = `${API_URL}/api/vault`;
+
+      const REASONS = {
+        Growth: [
+          "You cannot sprout in the same soil that withered you.",
+          "Growth happens when you step beyond your comfort zone.",
+          "Every ending is a new beginning in disguise.",
+          "The pain of discipline is temporary; regret is forever.",
+          "Transform your wounds into wisdom.",
+          "You are the architect of your own transformation.",
+          "Shed the old to make room for the new.",
+          "Strength grows in the moments when you think you can't go on.",
+          "Your potential is endless; stop limiting yourself.",
+          "Bloom where you are planted, then choose better soil.",
+          "The caterpillar thought the world was over; it was just a butterfly.",
+          "Change is the law of life; adapt or perish.",
+          "You don't drown by falling in water; you drown by staying there.",
+          "The seed that falls in fertile ground grows tallest.",
+          "Evolution demands sacrifice; let go to level up.",
+          "Your future self is cheering for today's choices.",
+          "Pain is the price of progress.",
+          "Rebirth requires breaking the shell.",
+          "Great things never come from comfort zones.",
+          "Upgrade your soil; watch yourself flourish.",
+          "The storm makes the oak strong.",
+        ],
+        Energy: [
+          "Your focus is your currency; stop spending it on a closed chapter.",
+          "Energy flows where attention goes.",
+          "Guard your energy like your most precious asset.",
+          "Low energy decisions lead to low energy outcomes.",
+          "Redirect your power to what fuels you.",
+          "Don't leak energy to yesterday's drama.",
+          "Your time is your life; invest it wisely.",
+          "Fatigue is the enemy of excellence.",
+          "Channel your fire into creation, not consumption.",
+          "Every 'yes' to distraction is a 'no' to destiny.",
+          "Preserve your spark for what ignites you.",
+          "Energy vampires drain; boundaries recharge.",
+          "Momentum builds with consistent small wins.",
+          "Rest is productive; burnout is not.",
+          "Your vitality is your superpower.",
+          "Stop pouring from an empty cup.",
+          "High energy attracts high opportunities.",
+          "Routine shapes your rhythm.",
+          "Silence recharges what noise depletes.",
+          "What you tolerate today, you accept tomorrow.",
+          "Energy audit: cut what costs more than it gives.",
+        ],
+        Possibility: [
+          "There are people you haven't met yet who will love you better.",
+          "Doors you can't imagine are waiting to open.",
+          "Your next chapter is your best yet.",
+          "Opportunities multiply when you move forward.",
+          "The universe rewards the bold.",
+          "Better is coming; trust the process.",
+          "Paths untaken hold your greatest adventures.",
+          "Someone extraordinary is waiting for your healed heart.",
+          "Your breakthrough is closer than your breakdown.",
+          "New horizons call; answer them.",
+          "Limiting beliefs block infinite potential.",
+          "The right connections arrive at the right time.",
+          "Serendipity favors the prepared mind.",
+          "Your story isn't over; it's just beginning.",
+          "Unknown blessings await your next step.",
+          "What if the best hasn't arrived yet?",
+          "Open hands receive more than closed fists.",
+          "The future you want is being built now.",
+          "Magic happens outside familiarity.",
+          "Your tribe is searching for you too.",
+          "Possibility lives in 'what if.'",
+        ],
+        SelfRespect: [
+          "Choosing yourself is never a loss.",
+          "You set the standard for how others treat you.",
+          "Self-love is not selfish; it's survival.",
+          "Your worth isn't negotiable.",
+          "Walk away from what disrespects your soul.",
+          "Healthy boundaries = healthy self-esteem.",
+          "You deserve spaces that make you bloom.",
+          "Never beg for a seat at someone else's table.",
+          "Your peace is non-negotiable.",
+          "Standards aren't walls; they're filters.",
+          "Love yourself enough to say no.",
+          "Your time has value; protect it.",
+          "Self-respect attracts mutual respect.",
+          "Compromise erodes character.",
+          "You can't pour from an empty vessel.",
+          "Dignity leaves no room for desperation.",
+          "Value yourself; the world follows.",
+          "No is a complete sentence.",
+          "Your growth demands better environments.",
+          "Self-betrayal hurts more than rejection.",
+          "Rise to your own expectations.",
+        ],
+        "Future Focus": [
+          "The version of you three months from now is counting on your discipline today.",
+          "Delayed gratification builds empires.",
+          "Future you thanks present you.",
+          "Small sacrifices yield massive rewards.",
+          "Vision pulls stronger than temptation pushes.",
+          "Compound your choices daily.",
+          "Your tomorrow mirrors today's habits.",
+          "Invest in legacy, not instant.",
+          "Discipline is future freedom.",
+          "Plant seeds today for tomorrow's harvest.",
+          "The long game wins.",
+          "Patience compounds like interest.",
+          "Future wealth starts with present restraint.",
+          "One year from now, you'll wish you started today.",
+          "Sacrifices today = stories tomorrow.",
+          "Vision > vibration.",
+          "Delayed pleasure = permanent gain.",
+          "Your future self is watching.",
+          "Consistency over intensity.",
+          "Build the life you preach.",
+          "Time invested never returns wasted.",
+        ],
       };
 
-      const handleFocusChange = async (val) => {
-        setDailyFocus(val);
-        try {
-          await fetch(`${API_BASE}/${USER_ID}/focus`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ dailyFocus: val })
-          });
-        } catch (err) { console.error("Focus sync failed"); }
-      };
+      function App() {
+        const [passwords, setPasswords] = useState([]);
+        const [newPassword, setNewPassword] = useState("");
+        const [startTime, setStartTime] = useState("20:00");
+        const [endTime, setEndTime] = useState("21:00");
+        const [lockDays, setLockDays] = useState("90");
+        const [customDays, setCustomDays] = useState("");
+        const [dailyFocus, setDailyFocus] = useState("");
+        const [masterLockStart, setMasterLockStart] = useState(() =>
+          localStorage.getItem("master_lock"),
+        );
+        const [currentTime, setCurrentTime] = useState(new Date());
+        const [selectedPass, setSelectedPass] = useState(null);
+        const [isLoading, setIsLoading] = useState(false);
+        const [serverTime, setServerTime] = useState(null);
 
-      const checkTimeAccess = (pass) => {
-        if (!serverTime) return false; // Server time unavailable - restrict access
-        const now = serverTime.getHours() * 60 + serverTime.getMinutes();
-        const [sH, sM] = pass.window.start.split(':').map(Number);
-        const [eH, eM] = pass.window.end.split(':').map(Number);
-        return now >= (sH * 60 + sM) && now <= (eH * 60 + eM);
-      };
+        useEffect(() => {
+          const fetchVault = async (showOffline = false) => {
+            try {
+              const response = await fetch(`${API_BASE}/${USER_ID}`);
+              if (!response.ok) throw new Error("Network error");
+              const data = await response.json();
+              setPasswords(data.passwords || []);
+              setDailyFocus(data.dailyFocus || "");
+            } catch (err) {
+              console.error("❌ Backend sync error:", err);
+              if (showOffline) {
+                alert("Offline mode. Vault data from cache. Check connection.");
+              }
+              // Try localStorage fallback
+              const cached = localStorage.getItem("vaultCache");
+              if (cached) {
+                const data = JSON.parse(cached);
+                setPasswords(data.passwords || []);
+                setDailyFocus(data.dailyFocus || "");
+              }
+            }
+          };
+          fetchVault();
+        }, []);
 
-      const isExpired = (pass) => {
-        return new Date(pass.endDate) < new Date();
-      };
+        useEffect(() => {
+          const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+          return () => clearInterval(timer);
+        }, []);
 
-      const startMasterLock = () => {
-        const timestamp = new Date().toISOString();
-        setMasterLockStart(timestamp);
-        localStorage.setItem('master_lock', timestamp);
-      };
+        // Server time cache - fetches once on load, retries every 5min
+        useEffect(() => {
+          const fetchServerTime = async () => {
+            try {
+              const response = await fetch(`${API_URL}/api/time`);
+              const data = await response.json();
+              setServerTime(new Date(data.datetime));
+            } catch (err) {
+              // Silent fail - no console spam
+            }
+          };
+          fetchServerTime();
+          const interval = setInterval(fetchServerTime, 300000); // 5min
+          return () => clearInterval(interval);
+        }, []);
 
-      return (
-        <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-12 fade-in">
-          <header className="text-center mb-8 md:mb-16">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-4 italic leading-tight">
-              DIGITAL COMMITMENT <span className="text-pink-500">VAULT</span>
-            </h1>
-            <div className="flex justify-center items-center gap-4 text-gray-400 font-mono text-[10px] sm:text-xs">
-              <span className="bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
-                SYSTEM_LOCAL: {currentTime.toLocaleTimeString()}
-              </span>
-            </div>
-          </header>
+        const dailyReason = useMemo(() => {
+          const day = currentTime.getDate();
+          const cats = Object.keys(REASONS);
+          const cat = cats[day % cats.length];
+          const quote = REASONS[cat][(day * 13) % REASONS[cat].length];
+          return { cat, quote };
+        }, [currentTime.getDate()]);
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
-            {/* Left: Dashboard */}
-            <div className="space-y-6 order-2 lg:order-1">
-              <div className="glass p-6 md:p-8 rounded-[2rem]">
-                <h3 className="text-[10px] font-bold text-pink-500 uppercase tracking-[0.2em] mb-4 md:6">Protocol Status</h3>
-                {masterLockStart ? (
-                  <div className="text-center">
-                    <p className="text-4xl md:text-5xl font-black mb-2">
-                      {Math.max(0, Math.ceil((new Date(masterLockStart).getTime() + (90 * 86400000) - Date.now()) / 86400000))}d
-                    </p>
-                    <p className="text-[10px] text-gray-500 uppercase font-bold">Remaining in 90-Day Challenge</p>
-                  </div>
-                ) : (
-                  <button onClick={startMasterLock} className="w-full py-4 border-2 border-pink-500/30 text-pink-500 rounded-2xl font-bold hover:bg-pink-500 hover:text-white transition-all uppercase text-[10px] tracking-widest">
-                    Activate Master Protocol
-                  </button>
-                )}
+        const addPassword = async () => {
+          if (!newPassword) return;
+          setIsLoading(true);
+          const payload = {
+            encrypted: btoa(newPassword),
+            days: customDays ? parseInt(customDays) : parseInt(lockDays),
+            window: { start: startTime, end: endTime },
+          };
+
+          try {
+            const response = await fetch(`${API_BASE}/${USER_ID}/add`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(payload),
+            });
+            if (response.ok) {
+              const data = await response.json();
+              setPasswords(data.passwords);
+              localStorage.setItem("vaultCache", JSON.stringify(data));
+              setNewPassword("");
+              setCustomDays("");
+              fetchVault();
+            } else {
+              throw new Error("Server error");
+            }
+          } catch (err) {
+            alert("Offline. Data queued for sync.");
+            localStorage.setItem("pendingSeal", JSON.stringify(payload));
+          } finally {
+            setIsLoading(false);
+          }
+        };
+
+        const handleFocusChange = async (val) => {
+          setDailyFocus(val);
+          try {
+            await fetch(`${API_BASE}/${USER_ID}/focus`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ dailyFocus: val }),
+            });
+          } catch (err) {
+            console.error("Focus sync failed");
+          }
+        };
+
+        const checkTimeAccess = (pass) => {
+          if (!serverTime) return false; // Server time unavailable - restrict access
+          const now = serverTime.getHours() * 60 + serverTime.getMinutes();
+          const [sH, sM] = pass.window.start.split(":").map(Number);
+          const [eH, eM] = pass.window.end.split(":").map(Number);
+          return now >= sH * 60 + sM && now <= eH * 60 + eM;
+        };
+
+        const isExpired = (pass) => {
+          return new Date(pass.endDate) < new Date();
+        };
+
+        const startMasterLock = () => {
+          const timestamp = new Date().toISOString();
+          setMasterLockStart(timestamp);
+          localStorage.setItem("master_lock", timestamp);
+        };
+
+        return (
+          <div className="max-w-6xl mx-auto p-4 md:p-8 lg:p-12 fade-in">
+            <header className="text-center mb-8 md:mb-16">
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black tracking-tighter mb-4 italic leading-tight">
+                DIGITAL COMMITMENT <span className="text-pink-500">VAULT</span>
+              </h1>
+              <div className="flex justify-center items-center gap-4 text-gray-400 font-mono text-[10px] sm:text-xs">
+                <span className="bg-white/5 px-4 py-1.5 rounded-full border border-white/10">
+                  SYSTEM_LOCAL: {currentTime.toLocaleTimeString()}
+                </span>
               </div>
+            </header>
 
-              <div className="glass p-6 md:p-8 rounded-[2rem] border-l-4 border-indigo-500">
-                <h3 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4">Daily Thought: {dailyReason.cat}</h3>
-                <p className="text-lg md:text-xl italic leading-relaxed font-light">"{dailyReason.quote}"</p>
-              </div>
-
-              <div className="glass p-6 md:p-8 rounded-[2rem]">
-                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">Today's Focus</h3>
-                <textarea 
-                  className="w-full bg-black/30 border border-white/5 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-pink-500 outline-none h-32 md:h-40 transition-all placeholder:text-gray-700"
-                  placeholder="What will you build today?"
-                  value={dailyFocus}
-                  onChange={(e) => handleFocusChange(e.target.value)}
-                />
-              </div>
-            </div>
-
-            {/* Right: Vault System */}
-            <div className="lg:col-span-2 space-y-6 md:space-y-8 order-1 lg:order-2">
-              {!masterLockStart && (
-                <section className="glass p-6 md:p-10 rounded-[2.5rem] relative overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 blur-3xl rounded-full"></div>
-                  <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8">Lock New Credential</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase font-bold text-gray-500 ml-2">Secure Credential</label>
-                      <input 
-                        type="password" placeholder="••••••••"
-                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-pink-500 transition-all text-sm"
-                        value={newPassword} onChange={e => setNewPassword(e.target.value)}
-                      />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+              {/* Left: Dashboard */}
+              <div className="space-y-6 order-2 lg:order-1">
+                <div className="glass p-6 md:p-8 rounded-[2rem]">
+                  <h3 className="text-[10px] font-bold text-pink-500 uppercase tracking-[0.2em] mb-4 md:6">
+                    Protocol Status
+                  </h3>
+                  {masterLockStart ? (
+                    <div className="text-center">
+                      <p className="text-4xl md:text-5xl font-black mb-2">
+                        {Math.max(
+                          0,
+                          Math.ceil(
+                            (new Date(masterLockStart).getTime() +
+                              90 * 86400000 -
+                              Date.now()) /
+                              86400000,
+                          ),
+                        )}
+                        d
+                      </p>
+                      <p className="text-[10px] text-gray-500 uppercase font-bold">
+                        Remaining in 90-Day Challenge
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] uppercase font-bold text-gray-500 ml-2">Lock Duration</label>
-                      <div className="flex gap-2">
-                        <select className="bg-white/5 border border-white/10 rounded-2xl p-4 flex-1 outline-none appearance-none text-sm" value={lockDays} onChange={e => setLockDays(e.target.value)}>
-                          <option value="7">7 Days</option>
-                          <option value="30">30 Days</option>
-                          <option value="90">90 Days</option>
-                          <option value="365">1 Year</option>
-                        </select>
-                        <input type="number" placeholder="Custom" className="bg-white/5 border border-white/10 rounded-2xl p-4 w-20 md:w-28 outline-none text-sm" value={customDays} onChange={e => setCustomDays(e.target.value)} />
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="bg-black/40 p-4 md:p-6 rounded-3xl border border-white/5 mb-6 md:mb-8 text-center">
-                    <p className="text-[10px] uppercase font-bold text-gray-500 mb-4 tracking-widest">Daily Viewing Window</p>
-                    <div className="flex justify-center items-center gap-4 md:gap-6">
-                      <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="bg-transparent text-xl md:text-2xl font-mono outline-none text-pink-500 cursor-pointer"/>
-                      <span className="text-gray-700 font-black">—</span>
-                      <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="bg-transparent text-xl md:text-2xl font-mono outline-none text-pink-500 cursor-pointer"/>
-                    </div>
-                  </div>
-
-                  <button 
-                    disabled={isLoading}
-                    onClick={addPassword} 
-                    className="gradient-btn w-full py-4 md:py-5 rounded-2xl font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-xs md:text-sm disabled:opacity-50"
-                  >
-                    {isLoading ? "Syncing..." : "Seal Into Vault"}
-                  </button>
-                </section>
-              )}
-
-              <section className="space-y-4">
-                <div className="flex items-center justify-between px-2 md:px-4">
-                  <h3 className="text-lg md:text-xl font-bold tracking-tight">Vault Archives</h3>
-                  <span className="text-[10px] md:text-xs bg-white/5 px-3 py-1 rounded-full text-gray-500">{passwords.length} items</span>
+                  ) : (
+                    <button
+                      onClick={startMasterLock}
+                      className="w-full py-4 border-2 border-pink-500/30 text-pink-500 rounded-2xl font-bold hover:bg-pink-500 hover:text-white transition-all uppercase text-[10px] tracking-widest"
+                    >
+                      Activate Master Protocol
+                    </button>
+                  )}
                 </div>
-                <div className="grid gap-4">
-                  {passwords.map(pass => (
-                    <div key={pass._id || pass.id} className="glass p-6 md:p-8 rounded-[2rem] flex flex-col sm:row justify-between items-center gap-4 sm:flex-row group hover:bg-white/[0.05] transition-all">
-                      <div className="text-center sm:text-left">
-                        <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                          <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></div>
-                          <p className="text-pink-400 font-mono font-bold tracking-tighter text-xs md:text-sm">WINDOW: {pass.window.start} — {pass.window.end}</p>
-                        </div>
-                        <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest sm:ml-4">Expires: {new Date(pass.endDate).toLocaleDateString()}</p>
+
+                <div className="glass p-6 md:p-8 rounded-[2rem] border-l-4 border-indigo-500">
+                  <h3 className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest mb-4">
+                    Daily Thought: {dailyReason.cat}
+                  </h3>
+                  <p className="text-lg md:text-xl italic leading-relaxed font-light">
+                    "{dailyReason.quote}"
+                  </p>
+                </div>
+
+                <div className="glass p-6 md:p-8 rounded-[2rem]">
+                  <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4">
+                    Today's Focus
+                  </h3>
+                  <textarea
+                    className="w-full bg-black/30 border border-white/5 rounded-2xl p-4 text-sm focus:ring-2 focus:ring-pink-500 outline-none h-32 md:h-40 transition-all placeholder:text-gray-700"
+                    placeholder="What will you build today?"
+                    value={dailyFocus}
+                    onChange={(e) => handleFocusChange(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Right: Vault System */}
+              <div className="lg:col-span-2 space-y-6 md:space-y-8 order-1 lg:order-2">
+                {!masterLockStart && (
+                  <section className="glass p-6 md:p-10 rounded-[2.5rem] relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/10 blur-3xl rounded-full"></div>
+                    <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8">
+                      Lock New Credential
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-bold text-gray-500 ml-2">
+                          Secure Credential
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 outline-none focus:border-pink-500 transition-all text-sm"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                        />
                       </div>
-                      <button 
-                        onClick={() => setSelectedPass(pass)}
-                        className="w-full sm:w-auto bg-white/5 hover:bg-white/10 px-8 md:px-12 py-3 md:py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 group-hover:border-pink-500/50"
+                      <div className="space-y-2">
+                        <label className="text-[10px] uppercase font-bold text-gray-500 ml-2">
+                          Lock Duration
+                        </label>
+                        <div className="flex gap-2">
+                          <select
+                            className="bg-white/5 border border-white/10 rounded-2xl p-4 flex-1 outline-none appearance-none text-sm"
+                            value={lockDays}
+                            onChange={(e) => setLockDays(e.target.value)}
+                          >
+                            <option value="7">7 Days</option>
+                            <option value="30">30 Days</option>
+                            <option value="90">90 Days</option>
+                            <option value="365">1 Year</option>
+                          </select>
+                          <input
+                            type="number"
+                            placeholder="Custom"
+                            className="bg-white/5 border border-white/10 rounded-2xl p-4 w-20 md:w-28 outline-none text-sm"
+                            value={customDays}
+                            onChange={(e) => setCustomDays(e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-black/40 p-4 md:p-6 rounded-3xl border border-white/5 mb-6 md:mb-8 text-center">
+                      <p className="text-[10px] uppercase font-bold text-gray-500 mb-4 tracking-widest">
+                        Daily Viewing Window
+                      </p>
+                      <div className="flex justify-center items-center gap-4 md:gap-6">
+                        <input
+                          type="time"
+                          value={startTime}
+                          onChange={(e) => setStartTime(e.target.value)}
+                          className="bg-transparent text-xl md:text-2xl font-mono outline-none text-pink-500 cursor-pointer"
+                        />
+                        <span className="text-gray-700 font-black">—</span>
+                        <input
+                          type="time"
+                          value={endTime}
+                          onChange={(e) => setEndTime(e.target.value)}
+                          className="bg-transparent text-xl md:text-2xl font-mono outline-none text-pink-500 cursor-pointer"
+                        />
+                      </div>
+                    </div>
+
+                    <button
+                      disabled={isLoading}
+                      onClick={addPassword}
+                      className="gradient-btn w-full py-4 md:py-5 rounded-2xl font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-xs md:text-sm disabled:opacity-50"
+                    >
+                      {isLoading ? "Syncing..." : "Seal Into Vault"}
+                    </button>
+                  </section>
+                )}
+
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between px-2 md:px-4">
+                    <h3 className="text-lg md:text-xl font-bold tracking-tight">
+                      Vault Archives
+                    </h3>
+                    <span className="text-[10px] md:text-xs bg-white/5 px-3 py-1 rounded-full text-gray-500">
+                      {passwords.length} items
+                    </span>
+                  </div>
+                  <div className="grid gap-4">
+                    {passwords.map((pass) => (
+                      <div
+                        key={pass._id || pass.id}
+                        className="glass p-6 md:p-8 rounded-[2rem] flex flex-col sm:row justify-between items-center gap-4 sm:flex-row group hover:bg-white/[0.05] transition-all"
                       >
-                        Unlock
+                        <div className="text-center sm:text-left">
+                          <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></div>
+                            <p className="text-pink-400 font-mono font-bold tracking-tighter text-xs md:text-sm">
+                              WINDOW: {pass.window.start} — {pass.window.end}
+                            </p>
+                          </div>
+                          <p className="text-[10px] text-gray-600 uppercase font-bold tracking-widest sm:ml-4">
+                            Expires:{" "}
+                            {new Date(pass.endDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => setSelectedPass(pass)}
+                          className="w-full sm:w-auto bg-white/5 hover:bg-white/10 px-8 md:px-12 py-3 md:py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 group-hover:border-pink-500/50"
+                        >
+                          Unlock
+                        </button>
+                      </div>
+                    ))}
+                    {passwords.length === 0 && (
+                      <div className="text-center py-12 md:py-20 glass rounded-[2.5rem] border-dashed border-2 border-white/5">
+                        <p className="text-gray-600 font-medium italic text-sm">
+                          The vault is currently empty.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              </div>
+            </div>
+
+            {/* Intervention / Unlock Modal */}
+            {selectedPass && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+                <div
+                  className="absolute inset-0 bg-black/95 backdrop-blur-xl"
+                  onClick={() => setSelectedPass(null)}
+                ></div>
+                <div className="relative glass p-8 md:p-16 rounded-[2.5rem] md:rounded-[3rem] max-w-2xl w-full text-center fade-in border border-white/10 max-h-[90vh] overflow-y-auto">
+                  {isExpired(selectedPass) || checkTimeAccess(selectedPass) ? (
+                    <div className="space-y-6 md:space-y-8">
+                      <div className="inline-block p-4 rounded-full bg-green-500/10">
+                        <svg
+                          className="w-8 h-8 md:w-12 md:h-12 text-green-500 mx-auto"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"
+                          ></path>
+                        </svg>
+                      </div>
+                      <h2 className="text-xl md:text-3xl font-black uppercase tracking-widest">
+                        Protocol Unlocked
+                      </h2>
+                      <div className="bg-black/50 p-6 md:p-10 rounded-[2rem] border border-white/10 break-all">
+                        <code className="text-2xl md:text-4xl font-mono text-white select-all">
+                          {atob(selectedPass.encrypted)}
+                        </code>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            atob(selectedPass.encrypted),
+                          );
+                          alert("Credential Copied.");
+                        }}
+                        className="gradient-btn w-full py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm"
+                      >
+                        Copy to Clipboard
+                      </button>
+                      <button
+                        onClick={() => setSelectedPass(null)}
+                        className="text-gray-600 hover:text-white transition-colors uppercase text-[10px] font-black tracking-widest block w-full"
+                      >
+                        Seal Again
                       </button>
                     </div>
-                  ))}
-                  {passwords.length === 0 && (
-                    <div className="text-center py-12 md:py-20 glass rounded-[2.5rem] border-dashed border-2 border-white/5">
-                      <p className="text-gray-600 font-medium italic text-sm">The vault is currently empty.</p>
+                  ) : (
+                    <div className="py-4 md:py-6">
+                      <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-10 tracking-tighter">
+                        PAUSE.
+                      </h2>
+                      <p className="text-lg md:text-2xl font-light leading-relaxed text-gray-300 mb-8 md:mb-12">
+                        You’re out here begging for attention from someone who
+                        doesn’t care, while your dreams sit ignored. No one’s
+                        coming to fix your life—get up and start building it.
+                      </p>
+
+                      <div className="bg-red-500/10 border border-red-500/20 p-4 md:p-6 rounded-2xl mb-8 md:mb-10">
+                        <p className="text-[10px] text-red-500 uppercase font-bold tracking-[0.2em] mb-2">
+                          Window Restricted
+                        </p>
+                        <p className="text-xs md:text-sm text-gray-500">
+                          Viewable daily:{" "}
+                          <span className="text-white font-mono">
+                            {selectedPass.window.start} —{" "}
+                            {selectedPass.window.end}
+                          </span>
+                        </p>
+                      </div>
+
+                      <button
+                        onClick={() => setSelectedPass(null)}
+                        className="bg-white/10 hover:bg-white/20 px-10 md:px-16 py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] border border-white/5 transition-all"
+                      >
+                        I Understand
+                      </button>
                     </div>
                   )}
                 </div>
-              </section>
-            </div>
-          </div>
-
-          {/* Intervention / Unlock Modal */}
-          {selectedPass && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
-              <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setSelectedPass(null)}></div>
-              <div className="relative glass p-8 md:p-16 rounded-[2.5rem] md:rounded-[3rem] max-w-2xl w-full text-center fade-in border border-white/10 max-h-[90vh] overflow-y-auto">
-                
-                {isExpired(selectedPass) || checkTimeAccess(selectedPass) ? (
-                  <div className="space-y-6 md:space-y-8">
-                    <div className="inline-block p-4 rounded-full bg-green-500/10">
-                      <svg className="w-8 h-8 md:w-12 md:h-12 text-green-500 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path></svg>
-                    </div>
-                    <h2 className="text-xl md:text-3xl font-black uppercase tracking-widest">Protocol Unlocked</h2>
-                    <div className="bg-black/50 p-6 md:p-10 rounded-[2rem] border border-white/10 break-all">
-                      <code className="text-2xl md:text-4xl font-mono text-white select-all">
-                        {atob(selectedPass.encrypted)}
-                      </code>
-                    </div>
-                    <button 
-                      onClick={() => { navigator.clipboard.writeText(atob(selectedPass.encrypted)); alert("Credential Copied."); }}
-                      className="gradient-btn w-full py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm"
-                    >
-                      Copy to Clipboard
-                    </button>
-                    <button onClick={() => setSelectedPass(null)} className="text-gray-600 hover:text-white transition-colors uppercase text-[10px] font-black tracking-widest block w-full">Seal Again</button>
-                  </div>
-                ) : (
-                  <div className="py-4 md:py-6">
-                    <h2 className="text-3xl md:text-4xl font-black mb-6 md:mb-10 tracking-tighter">PAUSE.</h2>
-                    <p className="text-lg md:text-2xl font-light leading-relaxed text-gray-300 mb-8 md:mb-12">
-                      This is your past calling, but your future is waiting. Some doors are closed for a reason.
-                    </p>
-                    
-                    <div className="bg-red-500/10 border border-red-500/20 p-4 md:p-6 rounded-2xl mb-8 md:mb-10">
-                      <p className="text-[10px] text-red-500 uppercase font-bold tracking-[0.2em] mb-2">Window Restricted</p>
-                      <p className="text-xs md:text-sm text-gray-500">
-                        Viewable daily: <span className="text-white font-mono">{selectedPass.window.start} — {selectedPass.window.end}</span>
-                      </p>
-                    </div>
-
-                    <button 
-                      onClick={() => setSelectedPass(null)} 
-                      className="bg-white/10 hover:bg-white/20 px-10 md:px-16 py-4 md:py-5 rounded-2xl font-black uppercase tracking-widest text-[10px] border border-white/5 transition-all"
-                    >
-                      I Understand
-                    </button>
-                  </div>
-                )}
               </div>
-            </div>
-          )}
-        </div>
-      );
-    }
-
-    // PWA SW Registration
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('/sw.js').then(reg => console.log('SW registered')).catch(err => console.log('SW failed', err));
-    }
-
-    // Loading progress
-    let loadProgress = 0;
-    const bar = document.querySelector('.loading-bar div');
-    const interval = setInterval(() => {
-      loadProgress += Math.random() * 10;
-      if (loadProgress > 95) loadProgress = 95;
-      bar.style.width = loadProgress + '%';
-    }, 100);
-
-    // Splash fade out after deps + React render
-    const fadeSplash = () => {
-      clearInterval(interval);
-      bar.style.width = '100%';
-      setTimeout(() => {
-        document.getElementById('splash').style.opacity = '0';
-        document.getElementById('root').style.opacity = '1';
-        setTimeout(() => document.getElementById('splash').remove(), 500);
-      }, 300);
-    };
-
-    const root = ReactDOM.createRoot(document.getElementById('root'));
-    root.render(<App />); 
-    fadeSplash();  
-  </script>
-
-  <script>
-    // Bottom Nav Active State
-    document.addEventListener('DOMContentLoaded', () => {
-      const path = window.location.pathname;
-      const vaultBtn = document.querySelector('#bottom-nav a[href="/"]');
-      const graphBtn = document.querySelector('#bottom-nav a[href="/graph"]');
-      if (path === '/') {
-        vaultBtn?.classList.add('active');
-      } else if (path === '/graph') {
-        graphBtn?.classList.add('graph-active');
+            )}
+          </div>
+        );
       }
-    });
-  </script>
 
-  <!-- Bottom Navigation -->
-  <nav id="bottom-nav">
-    <div class="nav-container">
-      <a href="/" class="nav-btn">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-          <polyline points="9 22 9 12 15 12 15 22"></polyline>
-        </svg>
-        <span class="nav-label">Vault</span>
-      </a>
-      <a href="/graph" class="nav-btn">
-        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 3v18h18V3H3z"></path>
-          <path d="M12 9v8"></path>
-          <path d="M9 11v6"></path>
-          <path d="M15 7v10"></path>
-        </svg>
-        <span class="nav-label">Graph</span>
-      </a>
-    </div>
-  </nav>
-</body>
+      // PWA SW Registration
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => console.log("SW registered"))
+          .catch((err) => console.log("SW failed", err));
+      }
+
+      // Loading progress
+      let loadProgress = 0;
+      const bar = document.querySelector(".loading-bar div");
+      const interval = setInterval(() => {
+        loadProgress += Math.random() * 10;
+        if (loadProgress > 95) loadProgress = 95;
+        bar.style.width = loadProgress + "%";
+      }, 100);
+
+      // Splash fade out after deps + React render
+      const fadeSplash = () => {
+        clearInterval(interval);
+        bar.style.width = "100%";
+        setTimeout(() => {
+          document.getElementById("splash").style.opacity = "0";
+          document.getElementById("root").style.opacity = "1";
+          setTimeout(() => document.getElementById("splash").remove(), 500);
+        }, 300);
+      };
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<App />);
+      fadeSplash();
+    </script>
+
+    <script>
+      // Bottom Nav Active State
+      document.addEventListener("DOMContentLoaded", () => {
+        const path = window.location.pathname;
+        const vaultBtn = document.querySelector('#bottom-nav a[href="/"]');
+        const graphBtn = document.querySelector('#bottom-nav a[href="/graph"]');
+        if (path === "/") {
+          vaultBtn?.classList.add("active");
+        } else if (path === "/graph") {
+          graphBtn?.classList.add("graph-active");
+        }
+      });
+    </script>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav">
+      <div class="nav-container">
+        <a href="/" class="nav-btn">
+          <svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span class="nav-label">Vault</span>
+        </a>
+        <a href="/graph" class="nav-btn">
+          <svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 3v18h18V3H3z"></path>
+            <path d="M12 9v8"></path>
+            <path d="M9 11v6"></path>
+            <path d="M15 7v10"></path>
+          </svg>
+          <span class="nav-label">Graph</span>
+        </a>
+      </div>
+    </nav>
+  </body>
 </html>
