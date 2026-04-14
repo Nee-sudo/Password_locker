@@ -135,22 +135,20 @@ app.post('/api/vault/:userId/attempt/:index', async (req, res) => {
     if (!entry) return res.status(404).json({ error: "Entry not found" });
 
     const now = new Date();
-    const istOffset = 5.5 * 60 * 60 * 1000;
-    const istNow = new Date(now.getTime() + istOffset);
 
     // Convert HH:MM → today Date
     const [sh, sm] = entry.window.start.split(':');
     const [eh, em] = entry.window.end.split(':');
 
-    const startTime = new Date(istNow);
+    const startTime = new Date(now);
     startTime.setHours(sh, sm, 0);
 
-    const endTime = new Date(istNow);
+    const endTime = new Date(now);
     endTime.setHours(eh, em, 0);
 
     let success = false;
 
-    if (istNow >= startTime && istNow <= endTime) {
+    if (now >= startTime && now <= endTime) {
       success = true;
       entry.score += 1;
       entry.streak += 1;
@@ -161,15 +159,11 @@ app.post('/api/vault/:userId/attempt/:index', async (req, res) => {
       entry.penalty += 1;
 
       // 🔥 shift window forward (penalty system)
-      const penaltyStart = new Date(istNow);
-      penaltyStart.setHours(sh, sm, 0);
-      penaltyStart.setMinutes(penaltyStart.getMinutes() + entry.penalty);
-      const penaltyEnd = new Date(istNow);
-      penaltyEnd.setHours(eh, em, 0);
-      penaltyEnd.setMinutes(penaltyEnd.getMinutes() + entry.penalty);
+      startTime.setMinutes(startTime.getMinutes() + entry.penalty);
+      endTime.setMinutes(endTime.getMinutes() + entry.penalty);
 
-      entry.window.start = `${penaltyStart.getHours().toString().padStart(2,'0')}:${penaltyStart.getMinutes().toString().padStart(2,'0')}`;
-      entry.window.end = `${penaltyEnd.getHours().toString().padStart(2,'0')}:${penaltyEnd.getMinutes().toString().padStart(2,'0')}`;
+      entry.window.start = `${startTime.getHours().toString().padStart(2,'0')}:${startTime.getMinutes().toString().padStart(2,'0')}`;
+      entry.window.end = `${endTime.getHours().toString().padStart(2,'0')}:${endTime.getMinutes().toString().padStart(2,'0')}`;
     }
 
     // Save attempt
