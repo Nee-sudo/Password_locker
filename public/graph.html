@@ -185,9 +185,12 @@
     font-weight: 600;
   }
 
-  .nav-btn:hover {
+.nav-btn:hover {
     color: var(--text-main);
-    background: #334155;
+    background: rgba(123, 56, 248, 0.15);
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(123, 56, 248, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .nav-btn.active {
@@ -357,9 +360,23 @@ loadData().then(data => {
   fadeSplash();
 });
 </script>
+
+<script>
+  // Bottom Nav Active State
+  document.addEventListener("DOMContentLoaded", () => {
+    const path = window.location.pathname;
+    const vaultBtn = document.querySelector('.bottom-nav a[href="/"]');
+    const graphBtn = document.querySelector('.bottom-nav a[href="/graph"]');
+    if (path === "/") {
+      vaultBtn?.classList.add("active");
+    } else if (path === "/graph") {
+      graphBtn?.classList.add("active");
+    }
+  });
+</script>
+
 <style>
 @keyframes spin { to { transform: rotate(360deg); } }
-</style>
 
 <!-- Bottom Navigation -->
 <nav class="bottom-nav">
