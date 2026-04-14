@@ -310,54 +310,61 @@
     <button onclick="updateView('yearly', this)">Yearly</button>
     <button onclick="updateView('lifetime', this)" class="active">Lifetime</button>
   </div>
+  <div id="persona" style="font-size:13px;color:#94a3b8;"></div>
+  <div id="reward" style="margin-top:8px;font-size:14px;"></div>
 </div>
+
+<div id="danger" style="font-weight:700;margin-bottom:10px;"></div>
 
 <div class="chart-wrapper">
   <canvas id="heartbeatChart"></canvas>
 </div>
 <script>
-const USER_ID = "elite_protocol_user_1";
+  const USER_ID = "elite_protocol_user_1";
 const API_URL = location.hostname === "localhost"
   ? "http://localhost:5000"
   : "https://passwordlocker-vpq0.onrender.com";
 
 let chart;
-let fullData = { labels: [], score: [] };
+let fullData = { labels: [], score: [], relapseData: [] };
+let progress = 0;
+let animationFrameId;
 
-// ✅ Safe fetch
-async function loadData() {
-  try {
-    const res = await fetch(`${API_URL}/api/vault/${USER_ID}`);
-    const data = await res.json();
+// 1. 🔥 The Reveal Plugin Logic
+const revealPlugin = {
+  id: 'reveal',
+  beforeDatasetDraw(chart, args) {
+    const { ctx, chartArea: { left, right, top, bottom } } = chart;
+    const prog = chart.options.plugins.revealProgress || 0;
+    
+    // Only clip line-type datasets
+    if (args.meta.type === "line") {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(left, top, (right - left) * prog, bottom - top);
+      ctx.clip();
+    }
+  },
+  afterDatasetDraw(chart, args) {
+    if (args.meta.type === "line") {
+      chart.ctx.restore();
+    }
+  }
+};
 
-    let labels = [];
-    let score = [];
-    let runningScore = 0;
-
-    (data.passwords || []).forEach((entry) => {
-      (entry.attempts || []).forEach((attempt) => {
-
-        // ✅ Cleaner time format
-        const date = new Date(attempt.time);
-        const time = date.getHours() + ":" + String(date.getMinutes()).padStart(2, "0");
-
-        runningScore += attempt.success ? 1 : -1;
-
-        labels.push(time);
-        score.push(runningScore);
-      });
-    });
-
-    return { labels, score };
-
-  } catch (err) {
-    console.error("Graph load failed:", err);
-    return { labels: ["No Data"], score: [0] };
+// 2. 🔥 Animation loop
+function animate() {
+  progress += 0.01; // Controls the "drawing" speed
+  if (progress <= 1) {
+    chart.options.plugins.revealProgress = progress;
+    chart.update('none'); // Update without default animations to prevent flickering
+    animationFrameId = requestAnimationFrame(animate);
   }
 }
 
+// 3. Update View Logic
 function updateView(range, btn) {
-  document.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.controls button').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
 
   let sliceCount;
@@ -368,66 +375,155 @@ function updateView(range, btn) {
     default: sliceCount = fullData.labels.length;
   }
 
+  // Update Chart Data
   chart.data.labels = fullData.labels.slice(-sliceCount);
   chart.data.datasets[0].data = fullData.score.slice(-sliceCount);
-  chart.update();
+  chart.data.datasets[1].data = fullData.relapseData.slice(-sliceCount);
+
+  // Trigger the manual reveal animation
+  cancelAnimationFrame(animationFrameId);
+  progress = 0;
+  animate();
 }
 
-// ✅ Splash handler (FIXED)
+// --- Logic functions (Relapse, Streak, etc.) ---
+function calculateRelapse(attempts) {
+  let risk = 0; let data = [];
+  for (let i = 0; i < attempts.length; i++) {
+    const a = attempts[i];
+    if (!a.success) risk += 3; else risk -= 0.5;
+    if (i > 0) {
+      const gap = new Date(a.time) - new Date(attempts[i - 1].time);
+      if (gap < 300000) risk += 2;
+    }
+    risk = Math.max(0, Math.min(risk, 100));
+    data.push(risk);
+  }
+  return data;
+}
+
+function detectDanger(relapseData) {
+  const latest = relapseData[relapseData.length - 1] || 0;
+  const banner = document.getElementById("danger");
+  if (latest > 15) { banner.innerText = "⚠️ HIGH RELAPSE RISK"; banner.style.color = "#ff4d4d"; } 
+  else if (latest > 8) { banner.innerText = "⚠️ STAY ALERT"; banner.style.color = "#facc15"; } 
+  else { banner.innerText = "✅ STABLE"; banner.style.color = "#22c55e"; }
+}
+
+function getPersonality(attempts) {
+  let fails = attempts.filter(a => !a.success).length;
+  let total = attempts.length || 1;
+  let ratio = fails / total;
+  if (ratio > 0.7) return "🔥 Impulsive";
+  if (ratio > 0.4) return "⚖️ Struggling";
+  if (ratio > 0.2) return "🧠 Learning";
+  return "🧘 Disciplined";
+}
+
+function calculateStreak(attempts) {
+  let streak = 0;
+  for (let i = attempts.length - 1; i >= 0; i--) {
+    if (attempts[i].success) streak++; else break;
+  }
+  return streak;
+}
+
+function getReward(streak) {
+  if (streak >= 30) return "👑 Elite Control";
+  if (streak >= 15) return "⚡ Unbreakable";
+  if (streak >= 7) return "🔥 Focused";
+  return "🌱 Starting";
+}
+
+// ✅ Data Fetching
+async function loadData() {
+  try {
+    const res = await fetch(`${API_URL}/api/vault/${USER_ID}`);
+    const data = await res.json();
+    const allAttempts = (data.passwords || []).flatMap(entry => entry.attempts || []);
+
+    let labels = [];
+    let score = [];
+    let runningScore = 0;
+
+    allAttempts.forEach((attempt) => {
+      const date = new Date(attempt.time);
+      const time = date.getHours() + ":" + String(date.getMinutes()).padStart(2, "0");
+      runningScore += attempt.success ? 1 : -1;
+      labels.push(time);
+      score.push(runningScore);
+    });
+
+    const relapseData = calculateRelapse(allAttempts);
+    const streak = calculateStreak(allAttempts);
+
+    document.getElementById("persona").innerText = "Profile: " + getPersonality(allAttempts);
+    document.getElementById("reward").innerText = `Streak: ${streak} | ${getReward(streak)}`;
+    detectDanger(relapseData);
+
+    return { labels, score, relapseData };
+  } catch (err) {
+    console.error("Graph load failed:", err);
+    return { labels: ["No Data"], score: [0], relapseData: [0] };
+  }
+}
+
 function fadeSplash() {
   const splash = document.getElementById("splash");
   const main = document.getElementById("main-content");
-
   splash.style.opacity = "0";
   main.style.opacity = "1";
-
   setTimeout(() => splash.remove(), 500);
 }
 
-// 🔥 Chart init
+// 🔥 Chart Initialization
 loadData().then(data => {
   fullData = data;
-
   const ctx = document.getElementById("heartbeatChart").getContext("2d");
 
   chart = new Chart(ctx, {
     type: "line",
+    plugins: [revealPlugin], // Attach the plugin here
     data: {
-      labels: data.labels.length ? data.labels : ["Start"],
+      labels: data.labels,
       datasets: [{
         label: "Discipline Score",
-        data: data.score.length ? data.score : [0],
+        data: data.score,
         borderColor: "#7b38f8",
         backgroundColor: "#7b38f8",
-        fill: false,
-        tension: 0.3,
+        yAxisID: 'y',
+        tension: 0.4,
         pointRadius: 4
+      }, {
+        label: "Relapse Risk",
+        data: data.relapseData,
+        borderColor: "#ff4d4d",
+        backgroundColor: "#ff4d4d20",
+        yAxisID: 'y1',
+        tension: 0.4,
+        pointRadius: 4,
+        borderDash: [5, 5]
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false, // Disable default animations for the "reveal" effect
       plugins: {
+        revealProgress: 0, // Custom state property for the plugin
         legend: { display: true },
-        title: {
-          display: true,
-          text: "Discipline Performance",
-          font: { size: 18 }
-        }
+        title: { display: true, text: "Discipline & Relapse Risk Analysis", font: { size: 18 } }
       },
       scales: {
-        x: {
-          title: { display: true, text: "Attempts (Time)" }
-        },
-        y: {
-          title: { display: true, text: "Score" },
-          beginAtZero: true
-        }
+        x: { title: { display: true, text: "Attempts (Time)" } },
+        y: { position: 'left', title: { display: true, text: "Discipline Score" } },
+        y1: { position: 'right', title: { display: true, text: "Relapse Risk" }, min: 0, max: 100 }
       }
     }
   });
 
   fadeSplash();
+  animate(); // Start initial reveal
 });
 </script>
 
