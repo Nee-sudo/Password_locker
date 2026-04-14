@@ -106,7 +106,7 @@
         font-weight: 500;
       }
 
-      .nav-btn:hover {
+
         color: #f1f5f9;
         background: rgba(255, 255, 255, 0.1);
       }
@@ -512,7 +512,7 @@
         };
 
         const checkTimeAccess = (pass) => {
-          if (!serverTime) return true; // fallback allow
+          if (!serverTime) return false; // Server time unavailable - restrict access
           const now = serverTime.getHours() * 60 + serverTime.getMinutes();
           const [sH, sM] = pass.window.start.split(":").map(Number);
           const [eH, eM] = pass.window.end.split(":").map(Number);
@@ -705,13 +705,7 @@
                           </p>
                         </div>
                         <button
-                          onClick={() => {
-                            if (!checkTimeAccess(pass)) {
-                              alert(`Outside allowed window: ${pass.window.start} — ${pass.window.end}`);
-                              return;
-                            }
-                            setSelectedPass({ ...pass, index });
-                          }}
+                          onClick={() => setSelectedPass({ ...pass, index })}
                           className="w-full sm:w-auto bg-white/5 hover:bg-white/10 px-8 md:px-12 py-3 md:py-4 rounded-2xl font-black text-[10px] md:text-xs uppercase tracking-widest transition-all border border-white/5 group-hover:border-pink-500/50"
                         >
                           Unlock

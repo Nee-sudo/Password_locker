@@ -29,7 +29,8 @@
     justify-content: flex-start;
     height: 100vh;
     margin: 0;
-    padding: 20px 20px 120px 20px;
+    padding-bottom: 5rem;
+    padding: 20px 20px 0 20px;
     background: var(--bg-color);
     color: var(--text-main);
     box-sizing: border-box;
@@ -185,9 +186,12 @@
     font-weight: 600;
   }
 
-  .nav-btn:hover {
+.nav-btn:hover {
     color: var(--text-main);
-    background: #334155;
+    background: rgba(123, 56, 248, 0.15);
+    transform: scale(1.05) translateY(-1px);
+    box-shadow: 0 4px 12px rgba(123, 56, 248, 0.3);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .nav-btn.active {
@@ -204,6 +208,75 @@
     font-size: 10px;
     display: none;
   }
+
+      /* Bottom Navigation from index.html */
+      #bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 50;
+        background: rgba(255, 255, 255, 0.05);
+        -webkit-backdrop-filter: blur(20px);
+        backdrop-filter: blur(20px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 12px 16px;
+      }
+
+      .nav-container {
+        max-width: 6xl;
+        margin: 0 auto;
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+      }
+
+      .nav-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        padding: 8px 12px;
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.5);
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      .nav-btn:hover {
+        color: #f1f5f9;
+        background: rgba(255, 255, 255, 0.1);
+      }
+
+      .nav-btn.active {
+        color: #ec4899;
+        background: rgba(255, 255, 255, 0.15);
+        font-weight: 600;
+      }
+
+      .nav-btn.graph-active {
+        color: #7b38f8;
+        background: rgba(255, 255, 255, 0.15);
+        font-weight: 600;
+      }
+
+      .nav-icon {
+        width: 24px;
+        height: 24px;
+      }
+
+      .nav-label {
+        font-size: 10px;
+        display: none;
+      }
+
+      @media (min-width: 768px) {
+        .nav-label {
+          display: block;
+        }
+      }
 
   @media (min-width: 768px) {
     .nav-label {
@@ -357,31 +430,58 @@ loadData().then(data => {
   fadeSplash();
 });
 </script>
-<style>
-@keyframes spin { to { transform: rotate(360deg); } }
-</style>
 
-<!-- Bottom Navigation -->
-<nav class="bottom-nav">
-  <div class="nav-container">
-    <a href="/" class="nav-btn">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-        <polyline points="9 22 9 12 15 12 15 22"/>
-      </svg>
-      <span class="nav-label">Vault</span>
-    </a>
-    <a href="/graph" class="nav-btn">
-      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M3 3v18h18V3H3z"/>
-        <path d="M12 9v8"/>
-        <path d="M9 11v6"/>
-        <path d="M15 7v10"/>
-      </svg>
-      <span class="nav-label">Graph</span>
-    </a>
-  </div>
-</nav>
+<script>
+      // Bottom Nav Active State
+      document.addEventListener("DOMContentLoaded", () => {
+        const path = window.location.pathname;
+        const vaultBtn = document.querySelector('#bottom-nav a[href="/"]');
+        const graphBtn = document.querySelector('#bottom-nav a[href="/graph"]');
+        if (path === "/") {
+          vaultBtn?.classList.add("active");
+        } else if (path === "/graph") {
+          graphBtn?.classList.add("graph-active");
+        }
+      });
+    </script>
+
+    <!-- Bottom Navigation -->
+    <nav id="bottom-nav">
+      <div class="nav-container">
+        <a href="/" class="nav-btn">
+          <svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+            <polyline points="9 22 9 12 15 12 15 22"></polyline>
+          </svg>
+          <span class="nav-label">Vault</span>
+        </a>
+        <a href="/graph" class="nav-btn">
+          <svg
+            class="nav-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M3 3v18h18V3H3z"></path>
+            <path d="M12 9v8"></path>
+            <path d="M9 11v6"></path>
+            <path d="M15 7v10"></path>
+          </svg>
+          <span class="nav-label">Graph</span>
+        </a>
+      </div>
+    </nav>
 
 </body>
 </html>
