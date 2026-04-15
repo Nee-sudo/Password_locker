@@ -100,7 +100,7 @@ app.post('/api/vault/:userId/add', async (req, res) => {
     const { encrypted, days, window } = req.body;
 
     const expiry = new Date();
-    expiry.setDate(expiry.getDate() + parseInt(days));
+    expiry.setDate(expiry.getDate() + parseInt(days)); 
 
     const newEntry = {
       encrypted,
@@ -217,3 +217,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });
+//testing 1
