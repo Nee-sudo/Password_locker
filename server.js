@@ -78,6 +78,11 @@ mongoose.connect(MONGO_URI)
   .catch(err => console.error('❌ DB Error:', err));
 
 
+// IST Helper
+const getISTTime = () => {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+};
+
 // --- API ROUTES ---
 
 // 1. Fetch Vault Data
@@ -134,17 +139,17 @@ app.post('/api/vault/:userId/attempt/:index', async (req, res) => {
     const entry = vault.passwords[req.params.index];
     if (!entry) return res.status(404).json({ error: "Entry not found" });
 
-    const now = new Date();
+    const now = getISTTime();
 
-    // Convert HH:MM → today Date
+    // Convert HH:MM → today IST Date
     const [sh, sm] = entry.window.start.split(':');
     const [eh, em] = entry.window.end.split(':');
 
-    const startTime = new Date(now);
-    startTime.setHours(sh, sm, 0);
+    const startTime = new Date(getISTTime());
+    startTime.setHours(parseInt(sh), parseInt(sm), 0);
 
-    const endTime = new Date(now);
-    endTime.setHours(eh, em, 0);
+    const endTime = new Date(getISTTime());
+    endTime.setHours(parseInt(eh), parseInt(em), 0);
 
     let success = false;
 
@@ -158,7 +163,7 @@ app.post('/api/vault/:userId/attempt/:index', async (req, res) => {
       entry.streak = 0;
       entry.penalty += 1;
 
-      // 🔥 shift window forward (penalty system)
+      // 🔥 shift window forward (penalty system, IST)
       startTime.setMinutes(startTime.getMinutes() + entry.penalty);
       endTime.setMinutes(endTime.getMinutes() + entry.penalty);
 
@@ -206,9 +211,9 @@ app.patch('/api/vault/:userId/focus', async (req, res) => {
 });
 
 
-// 5. Server Time
+// 5. Server Time (IST ISO)
 app.get('/api/time', (req, res) => {
-  res.json({ datetime: new Date().toISOString() });
+  res.json({ datetime: getISTTime().toISOString() });
 });
 
 
